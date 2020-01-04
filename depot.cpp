@@ -1,11 +1,23 @@
 
 
 #include "depot.h"
+#include "qdebug.h"
 #include "polynom.h"
 
+#include "QFile"
+#include "QString"
+#include "QByteArray"
+
 #define NOOUTPUT
-using std::cout;
-using std::endl;
+
+TransActAnt::TransActAnt() :
+    cDatum(),iAnteile(0), iType(2)
+{}
+
+TransActAnt::TransActAnt(const int& A) :
+    cDatum(),iAnteile(A), iType(2)
+{}
+
 
 /*Depot::Depot()
 {
@@ -28,86 +40,91 @@ Depot::~Depot()
 }*/
 
 
-
-
-Depot::Depot(const char* cFile)
+Depot::Depot() :
+    cDateBegin()
 {
-	/*static ThreadData tdThreadData;
-	static HANDLE hThread = 0;
-	tdThreadData.cFile = (char*)cFile;
-	tdThreadData.pdDepot = (Depot*)this;
+    qInfo() << "Creating Deposet " << (long)this;
+}
 
-	std::cout << "creating thread " << _beginthread(InitDepots, 0, &tdThreadData) << std::endl;
-	return;*/
+Depot::Depot(const Depot& A) :
+    std::list<DepotPos*> (A)
+{
+    *this = A;
+    qInfo() << "Copying Depotset " << (long long)this;
+}
+
+Depot::Depot(const char* cFile) :
+    cDateBegin()
+{
+    qInfo() << "Creating Deposet " << (long long)this << "from" << cFile;
 	LoadDepotFile(cFile);
 	return;
 }
 
-/*void InitDepots (void* pParam)
+Depot::~Depot()
 {
-	if (pParam == 0) {
-		std::cout << "Keine Klasse angegeben! Ende" << std::endl;
-		return;
-	}
-	ThreadData *ptdTD = (ThreadData *)pParam;
-
-	ptdTD->pdDepot->LoadDepotFile(ptdTD->cFile);
-
-	return;
-}*/
+    qInfo() << "Deleating Depotset" << (long long)this;
+}
 
 
 bool Depot::LoadDepotFile (const char * cFile)
 {
 
-	std::fstream fsDepotFile;
-	std::string sDepotData,sDepotData2;
+    QFile fsDepotFile(cFile);
+    //QString sDepotData,sDepotData2;
 	DepotPos* pcDepot;
+    cDateBegin = QDate();
 
-
-	//iDCDepotCountMax = 0;
-
-	fsDepotFile.open(cFile , std::ios::in); // "F:\\fonddaten\\depot.dpt"
-	if (fsDepotFile.fail())
+    if (!fsDepotFile.open(QIODevice::ReadOnly /* | QIODevice::Text */ ))
 	{
-		std::cout << "No DepotFile Opened" << std::endl;
-
-		return false; // -1;
+        qWarning() << "DepotFile" << cFile << "could not being opend Opened";
+        return false;
 	}
-    cDateBegin = -1;
-	while(!fsDepotFile.eof())
+
+    while(!fsDepotFile.atEnd())
 	{
-		std::getline(fsDepotFile,sDepotData);
-		if (sDepotData.size() > 3) {
-			if (sDepotData.c_str()[2] == ':'){
-				pcDepot = GetDepotClass(sDepotData.c_str());
+        QByteArray sDepotData = fsDepotFile.readLine();
+
+        if (sDepotData.size() > 3) {
+            if (sDepotData[2] == ':'){
+                pcDepot = GetDepotClass(sDepotData);
 				push_back(pcDepot);
-				//iDCDepotCountMax++;
+
 			} else {
 				int iType = 0;
-				if (sDepotData.c_str()[0] == '*')
+                if (sDepotData[0] == '*')
 				{
 					iType = 1;
-					sDepotData.erase(0,1);
+                    sDepotData.remove(0,1);
 				}
-				size_t iPos;
-				if ((iPos = sDepotData.rfind("St")) != std::string::npos)
+
+                size_t iPos;
+                if ((iPos = sDepotData.lastIndexOf("St")) != -1)
 				{
 				    iType = 3;
-				    sDepotData.erase(iPos);
+                    sDepotData.remove(iPos,MAXINT32);
 				}
-				sDepotData2 = sDepotData;
-				sDepotData2.erase(0,8);
-				sDepotData.erase(9);
+
+                QByteArray sDepotData2 = sDepotData;
+                sDepotData2.remove(0,8);
+                sDepotData.remove(9,MAXINT32);
 				if(pcDepot != 0)
 				{
-				    Datum dT = StrToDate(sDepotData);
-				    if ((cDateBegin == -1) || (cDateBegin > dT))
+                    QDate dT = QDate::fromString(sDepotData,QString("dd.MM.yy"));
+                    bool bOK;
+                    double val = sDepotData2.toFloat(&bOK);
+                    if (!bOK)
+                    {
+                        qWarning() << "Did not correctly process line"
+                        continue;
+                    }
+                    if ((!cDateBegin.isValid()) || (cDateBegin > dT))
 				    {
                         cDateBegin = dT;
 				    }
+
 					if (iType==1) { // Wiederanlage (keinGrundbestand)
-						pcDepot->AddGewinn(dT,atof(sDepotData2.c_str()));
+                        pcDepot->AddGewinn(dT,atof());
 					}else if (iType==0){ // Neuanlage (Grundbestand)
 						pcDepot->AddTransAction(dT,atof(sDepotData2.c_str()));
 					}else if (iType==3){ // Neuanlage (Stück)
@@ -282,9 +299,18 @@ double Depot::GetMaxDepotSetWert(Datum& cdDatLow, Datum &cdDatHigh)
 	return dMaxDSWert;
 }
 
+bool Depot::ResetMaxDates()
+{
+    cdEnd = QDate();
+    cdStart = QDate();
+    return true;
+}
+
 
 void Depot::ClearDepots()
-{clear();}
+{
+    clear();
+}
 
 double Depot::GetCurrentDSTrend(const Datum &DStart, const Datum &DEnd)
 {

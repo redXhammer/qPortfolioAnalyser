@@ -19,12 +19,14 @@ SOURCES += \
     depot.cpp \
     fond.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    polynom.cpp
 
 HEADERS += \
     depot.h \
     fond.h \
-    mainwindow.h
+    mainwindow.h \
+    polynom.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

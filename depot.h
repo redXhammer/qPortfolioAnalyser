@@ -4,6 +4,8 @@
 #include <iomanip>
 //#include <process.h>
 #include <list>
+#include <QDate>
+#include "QString"
 
 #define STARTATEARLIEST 0
 #define STOPATLAST -1
@@ -18,21 +20,21 @@
 class TransActAnt
 {
 public:
-	Datum cDatum;
-	double iAnteile;
-	int iType; // 0 = Einzahlung
-			   // 1 = Gewinn
-				// 2 = Datum Ungültig
-	TransActAnt(const int& A) {cDatum = 0; iAnteile = A; iType = 2;}
-	TransActAnt() {cDatum = 0; iAnteile = 0; iType = 2;}
-
+    TransActAnt();
+    TransActAnt(const int& A);
 	friend std::ostream& operator << (std::ostream& OS, TransActAnt& E);
+private:
+    QDate cDatum;
+    double iAnteile;
+    int iType; // 0 = Einzahlung
+               // 1 = Gewinn
+                // 2 = Datum Ungültig
 };
 std::ostream& operator << (std::ostream& OS, TransActAnt& E);
 
 struct DepotTable
 {
-	Datum cDatum;
+    QDate cDatum;
 	double dAnteile;
 	double dFondWert;
 };
@@ -48,55 +50,46 @@ public:
 	DepotPos(const char*);
 	DepotPos(const char* sWKN, int iDepotNr);
 	~DepotPos();
-	int AddTransAction(const Datum&,const double&);
-	int AddItem(const Datum &, const double &);
-	int AddGewinn(Datum, double);
-	TransActAnt GetCurrentFondAnt(const Datum&);
-	double GetCurrentFondWert(const Datum&);
-	double GetCurrentDepotWert(const Datum&);
-	double GetCurrentTrend(const Datum &Start, const Datum &End);
-	double GetDepotGrowth(const Datum& cdDatLow,const Datum &cdDatHigh);
-	double GetFondGrowth(const Datum& cdDatLow,const Datum &cdDatHigh);
-	std::string sWKN;
+    int AddTransAction(const QDate&,const double&);
+    int AddItem(const QDate &, const double &);
+    int AddGewinn(QDate, double);
+    TransActAnt GetCurrentFondAnt(const QDate&);
+    double GetCurrentFondWert(const QDate&);
+    double GetCurrentDepotWert(const QDate&);
+    double GetCurrentTrend(const QDate &Start, const QDate &End);
+    double GetDepotGrowth(const QDate& cdDatLow,const QDate &cdDatHigh);
+    double GetFondGrowth(const QDate& cdDatLow,const QDate &cdDatHigh);
+
+
+private:
+    QString sWKN;
 	int iDepotNr;
 	fond* pFond;
-	//TransActAnt* pTAA;
-	//int iCountTAA;
+
 	std::deque<TransActAnt>::iterator itTAAlow;
 	std::deque<TransActAnt>::iterator itTAAhigh;
 
-
-	//DepotTable* pDTtable;
-	//int iDTtableCount;
-	//int GetTable(Datum& DStart, Datum &DEnd);
 };
 
 
 class Depot  : public std::list<DepotPos*>
 {
-protected:
-	Datum cdStart, cdEnd; // Für GetDepotSetWert
-	double dCurrentMaxDepotSetWert; // Für GetDepotSetWert
+private:
+    QDate cdStart;
+    QDate cdEnd;
+    double dCurrentMaxDepotSetWert;
 
 
 public:
-	Depot() {
-		cDateBegin = -1;
-		std::cout << "Creating Deposet " << (long)this<< std::endl;
-	}
-	~Depot(){std::cout << "Deleating Depotset" << (long)this<< std::endl;}
+    Depot();
+    Depot(const char*);
+    Depot(const Depot& A);
+    ~Depot();
 
-	Depot(const Depot& A) : std::list<DepotPos*> (A)
-	{
-	    *this = A;
-        std::cout << "Copying Depotset " << (long)this<< std::endl;
-	}
 
-	//Depot& operator= (const Depot&);
+    QDate cDateBegin;
 
-	Datum cDateBegin;
 
-	Depot(const char*);
 
 	std::string sName;
 
@@ -105,22 +98,22 @@ public:
 	bool AddDepot(DepotPos *);
 	void Delete (const int &iAt);
 	void ClearDepots();
-	bool MakeAllSavingsPlan(double dValPerPeriod, Datum dStart = STARTATEARLIEST, Datum dEnd = STOPATLAST, int iPeriod = EVERYMONTH);
+    bool MakeAllSavingsPlan(double dValPerPeriod, QDate dStart = QDate(), QDate dEnd = QDate(), int iPeriod = EVERYMONTH);
 
-    void MakeAutomaticTransaction(const Datum &, double &, double * pEinzahlung = NULL, double *pAuszahlung = NULL, std::ostream *pOS = NULL);
+    void MakeAutomaticTransaction(const QDate &, double &, double * pEinzahlung = NULL, double *pAuszahlung = NULL, std::ostream *pOS = NULL);
     void DeleteAllTransactions();
 
 	int GetCount();
-	double GetDepotSetWert(const Datum&);
+    double GetDepotSetWert(const QDate&);
 
-	double CalculateZins(const Datum& ,const Datum &);
+    double CalculateZins(const QDate& ,const QDate &);
 
 
 	DepotPos* operator [] (const int &);
 
 	//void ShowDepotGesamtWertHeute(const Datum &);
-	void ShowDepotGesamtWert(const Datum &);
-	double GetCurrentDSTrend(const Datum &, const Datum &);
+    void ShowDepotGesamtWert(const QDate &);
+    double GetCurrentDSTrend(const QDate &, const QDate &);
 	int iTableCount;
 #ifndef _CONSOLE
 	std::deque<wndcre*> dqWindows;
@@ -129,7 +122,7 @@ public:
 	/*double	dMaxAnt,dMaxAnt2;
 	double	dMaxFWert,dMaxFWert2;
 	double	dMaxDWert,dMaxDWert2;*/
-	double GetMaxDepotSetWert(Datum& , Datum &);
+    double GetMaxDepotSetWert(QDate& , QDate &);
     bool ResetMaxDates()
     {
         cdEnd = 0;
