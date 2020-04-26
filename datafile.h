@@ -5,6 +5,7 @@
 #include <QList>
 #include <QString>
 #include <QFile>
+#include <QTextStream>
 
 typedef QMap<QString , QMap<QString,QString> >::iterator ITdblMAP;
 typedef QMap<QString , QMap<QString,QString> >           DBLmap;
@@ -51,7 +52,6 @@ public:
         GetDataItEnd(){return mData.end();};
 
 // Variablen
-
 };
 
 #endif // DATAFILE_H
