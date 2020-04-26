@@ -2,26 +2,32 @@
 
 #ifndef FondFileHeader
 #define FondFileHeader
-#include "http.h"
+//#include "http.h"
 #include <deque>
 #include <map>
 
-bool GetSecu(const std::string cSearch, std::string &sSecu, std::string & sURL);
+#include <QDate>
+
+#include "datafile.h"
+
+bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL);
+
+class KursUndDatum
+{
+public:
+    double iKurs;
+    QDate cDatum;
+    //friend std::ostream& operator << (std::ostream& OS, KursUndDatum& E);
+    //friend std::istream& operator >> (std::istream& OS, KursUndDatum& KUD);
+    KursUndDatum& operator = (KursUndDatum&);
+};
 
 class fond
 {
-
-
-
 private:
-
-
 	http cHttp;
 	DataFile WknFile;
-	Datum DateOfWkn();
-
-
-
+    QDate DateOfWkn();
 
     int iStatus;    // 0 OK, 1 Daten Laden, 2 Fehler
 
@@ -29,56 +35,54 @@ private:
 //protected:
 public:
 
-	std::deque<KursUndDatum> dqKUD;
-    std::deque<KursUndDatum> dqAusschuettung;
+    QList<KursUndDatum> dqKUD;
+    QList<KursUndDatum> dqAusschuettung;
 
-    //std::deque<KursUndDatum>::iterator itKUDlow;
-	//std::deque<KursUndDatum>::iterator itKUDhigh;
 	int iKUD;
 
-    std::deque<KursUndDatum>::iterator itAussHigh;
-    std::deque<KursUndDatum>::iterator itAussLow;
+    QList<KursUndDatum>::iterator itAussHigh;
+    QList<KursUndDatum>::iterator itAussLow;
 
 public:
 
     fond() : iKUD(0) {}
 	fond(const char* sWkn);
 	bool LoadAllData();
-	int DownloadFondData(Datum cdMax = 0);
-	int DownloadData(Datum, Datum, int iBoerseID = 6,bool bClean_Split = false, bool bClean_Payout = false ,bool bClean_Bezug = false); // 6 Xetra // 8 Fonds
+    int DownloadFondData(QDate cdMax = 0);
+    int DownloadData(QDate, QDate, int iBoerseID = 6,bool bClean_Split = false, bool bClean_Payout = false ,bool bClean_Bezug = false); // 6 Xetra // 8 Fonds
 	int LoadFondKurse();
 	int LoadFondAuss();
 	std::deque<KursUndDatum> DownloadFondAuss();
 	int SaveFondData();
-	double GetCurrentWert(const Datum&);
-	double GetAussFactor(const Datum&);
-	double GetTotalWert(const Datum &);
-	double GetCurrentAverage(const Datum &cDatum, int iTage);
+    double GetCurrentWert(const QDate&);
+    double GetAussFactor(const QDate&);
+    double GetTotalWert(const QDate &);
+    double GetCurrentAverage(const QDate &cDatum, int iTage);
 	void DownloadFundamental();
 	const char* GetWknFileName();
 
 
 	// Daten:
 
-	std::string     STsURL;
-    std::string     STsName;
-    std::string     sWkn;
-	std::string     sWknFileName;
-	std::string     STsKag;
-	std::string     STsISIN;
-	Datum           STdAuflageDatum;
-	std::string     STsKategorie;
-	std::string     STsWaehrung;
-	std::string     STsVolumen;
-	double         STdAusgabeaufschlag;
-	double         STdVerwaltungsgebuehr;
-	double         STdDepotbankgebuehr;
-	bool           STbSparplanfaehig;
-	double         STdMinimalanlage;
-	bool           STbAusschuettend;
-	int             STiPers;
+    QString     STsURL;
+    QString     STsName;
+    QString     sWkn;
+    QString     sWknFileName;
+    QString     STsKag;
+    QString     STsISIN;
+    QDate       STdAuflageDatum;
+    QString     STsKategorie;
+    QString     STsWaehrung;
+    QString     STsVolumen;
+    double      STdAusgabeaufschlag;
+    double      STdVerwaltungsgebuehr;
+    double      STdDepotbankgebuehr;
+    bool        STbSparplanfaehig;
+    double      STdMinimalanlage;
+    bool        STbAusschuettend;
+    int         STiPers;
 
-	std::string cSecu;
+    QString cSecu;
 
 
 
@@ -100,7 +104,7 @@ public:
     bool SaveContainerFile(const char* file);
     int GetFilteredList(std::vector<std::string> & vList);
     bool GetKagFonds(int iKagNr);
-    std::map<int,std::string> GetKags();
+    QMap<int,QString> GetKags();
 
     int iStatus; // 0 OK, 1 Daten Laden, 2 Fehler
 

@@ -8,46 +8,21 @@
 //#define LOWOUTPUT
 //#define NOOUTPUT
 #define AKTUALISIEREN 0
-
-
-using std::cout;
-using std::endl;
-using std::ostream;
-using std::stringbuf;
-using std::stringstream;
-using std::deque;
+#include <QDebug>
 
 typedef unsigned long DWORD;
 
-Datum fond::DateOfWkn()
+QDate fond::DateOfWkn()
 {
-	/*WIN32_FIND_DATA FindFileData;
-	HANDLE hFind;
-	//FILETIME ftCreate, ftAccess, ftWrite;
-    SYSTEMTIME stUTC, stLocal;
-
-	hFind = FindFirstFile(sWknFileName.c_str() , &FindFileData);
-
-	if (hFind == INVALID_HANDLE_VALUE) {
-		return -1;
-		//assert(0);
-	}
-	FindClose(hFind);
-	FileTimeToSystemTime(&FindFileData.ftLastWriteTime , &stUTC);
-    SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);*/
-	Datum DHelp;
+    QDate DHelp;
 	DHelp = StrToDate(WknFile.GetData("Fond","LastUpdate"));
 	return DHelp;
 }
-
-
 
 const char* fond::GetWknFileName()
 {
 	return sWkn.c_str();
 }
-
-
 
 fond::fond(const char* sWkn2) /***************** Konstructor der Fond-Klasse mit übergabe der WKN **************/
 {
@@ -58,7 +33,7 @@ fond::fond(const char* sWkn2) /***************** Konstructor der Fond-Klasse mit
 	sWknFileName += sWkn;
 	sWknFileName += ".fdd";
 #ifndef NOOUTPUT
-	cout << "Datum der Fonddatei" << DateOfWkn() << endl;
+    qInfo() << "Datum der Fonddatei" << DateOfWkn();
 #endif
 	iDateToday = GetDateOfToday();
     iStatus = 1;
@@ -71,7 +46,7 @@ bool fond::LoadAllData()
     {
         if (GetSecu(sWkn,cSecu,STsURL) == false)
         {
-            cout << "Secu Error" << endl;
+            qInfo() << "Secu Error";
             iStatus = 2;
             return -1;
         }
@@ -328,11 +303,11 @@ int fond::DownloadFondData(Datum cdMax) {
 
 
 #ifndef NOOUTPUT
-	cout << "Erstelle Fondtabelle ...";
+    qInfo() << "Erstelle Fondtabelle ...";
 #endif
 
 
-    std::string sBID = WknFile.GetData("Fond","BoerseID");
+    QString sBID = WknFile.GetData("Fond","BoerseID");
     if (sBID.length() == 0)
     {
         html hSite;
@@ -376,7 +351,7 @@ int fond::DownloadFondData(Datum cdMax) {
 
         }
         int iBID = atoi(sBID2.c_str());
-        cout << "Benutze: " << sBoerse << " (" << iBID << ")" << endl;
+        qInfo() << "Benutze: " << sBoerse << " (" << iBID << ")";
 
         WknFile.AddData("Fond","BoerseID",sBID2.c_str());
         if (DownloadData(cdMax, iDateToday,iBID) != 0) {iStatus = 2;return -1;}
@@ -563,7 +538,7 @@ double fond::GetTotalWert(const Datum &cDatum)
 	return GetCurrentWert(cDatum) / GetAussFactor(cDatum-1);
 }
 
-double fond::GetCurrentAverage(const Datum &cDatum, int iTage)
+double fond::GetCurrentAverage(const QDate &cDatum, int iTage)
 {
     double dSum = 0;
     for (Datum dDat = cDatum - iTage; dDat < cDatum; dDat++)
@@ -630,7 +605,7 @@ void fond::DownloadFundamental()
 
 
 
-bool GetSecu(const std::string cSearch, std::string &sSecu, std::string & sURL)
+bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
 {
 
 
