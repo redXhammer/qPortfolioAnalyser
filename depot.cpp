@@ -131,7 +131,7 @@ bool Depot::LoadDepotFile (const char * cFile)
 						pcDepot->AddItem(dT,atof(sDepotData2.c_str()));
 					}
 				} else {
-					std::cout << "No Depot Defined" << std::endl;
+                    qInfo() << "No Depot Defined" ;
 				}
 			}
 		}
@@ -145,7 +145,7 @@ bool Depot::LoadDepotFile (const char * cFile)
 
 	}
 #endif
-    sName = cFile;
+    //sName = cFile;
 	return true;
 }
 
@@ -172,42 +172,42 @@ void Depot::Delete (const int &iAt)
     }
 }
 
-void Depot::ShowDepotGesamtWert(const Datum &cDateOfW) {
+QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
 	//double dWert7, dWertGes7 = 0;
 	double dWert31, dWertGes31 = 0;
 	double dWertStart, dWertGesStart = 0;
 	double dWertGesammt = 0;
 
-	std::cout << "Entwicklung vom " << cDateBegin << " bis zum " << (Datum)cDateOfW << std::endl;
+    QString strText;
+    QTextStream streamText(&strText,QIODevice::WriteOnly);
 
-	std::cout << std::endl<< '|' << std::setw( 10 ) << "DepotPos" <<'|' << std::setw( 10 ) << "Anteile" <<'|' << std::setw( 10 ) << "Wert"  <<'|' <<
-		/*std::setw( 10 ) << "+- Woche"  <<'|' <<*/ std::setw( 10 ) << "+- Monat"  <<'|' << "+- Gesamt"  <<'|' << " Zins " << '|' << std::endl;
+    streamText << "Entwicklung vom " << cDateBegin.toString() << " bis zum " << cDateOfW.toString();
+
+    streamText << '|' << qSetFieldWidth( 10 ) << "DepotPos" <<'|' << qSetFieldWidth( 10 ) << "Anteile" <<'|' << qSetFieldWidth( 10 ) << "Wert"  <<'|' <<
+        qSetFieldWidth( 10 ) << "+- Monat"  <<'|' << "+- Gesamt"  <<'|' << " Zins " << '|' ;
 	std::list<DepotPos*>::const_iterator idDepot;
 	for (idDepot = begin(); idDepot != end();idDepot++)
 	{
 		dWertGesammt += (*idDepot)->GetCurrentDepotWert(cDateOfW);
-		std::cout << '|' << std::setw( 10 ) << (*idDepot)->iDepotNr << '|';
-		std::cout.setf(std::ios::fixed);
-		std::cout.precision(4);
-		std::cout << std::setw( 10 ) << (*idDepot)->GetCurrentFondAnt(cDateOfW).iAnteile <<'|';
-		std::cout.setf(std::ios::fixed);
-		std::cout.precision(2);
-		std::cout << std::setw( 10 ) <<  (*idDepot)->GetCurrentDepotWert(cDateOfW) <<'|' ;
-		/*dWert7 = (*idDepot)->GetCurrentTrend(cDateOfW.iDatum - 7,cDateOfW);
-		dWertGes7 += dWert7;
-		std::cout << std::setw( 10 ) <<  dWert7 <<'|' ;*/
-		dWert31 = (*idDepot)->GetCurrentTrend(cDateOfW.iDatum - 31,cDateOfW);
+        streamText << '|' << qSetFieldWidth( 10 ) << (*idDepot)->iDepotNr << '|';
+        streamText << fixed;
+        streamText << qSetRealNumberPrecision(4);
+        streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetCurrentFondAnt(cDateOfW).iAnteile <<'|';
+        streamText << fixed;
+        streamText << qSetRealNumberPrecision(2);
+        streamText << qSetFieldWidth( 10 ) <<  (*idDepot)->GetCurrentDepotWert(cDateOfW) <<'|' ;
+        dWert31 = (*idDepot)->GetCurrentTrend(cDateOfW.addDays(-31), cDateOfW);
 		dWertGes31 += dWert31;
-		std::cout << std::setw( 10 ) <<  dWert31 <<'|' ;
+        streamText << qSetFieldWidth( 10 ) <<  dWert31 <<'|' ;
 		dWertStart = (*idDepot)->GetCurrentTrend(cDateBegin,cDateOfW);
 		dWertGesStart += dWertStart;
-		std::cout << std::setw( 10 ) <<  dWertStart <<'|' ;
-		std::cout << std::setw( 10 ) << (*idDepot)->GetDepotGrowth(cDateBegin,cDateOfW)  <<'|' ;
-		std::cout << std::setw( 10 ) << (*idDepot)->GetFondGrowth (cDateBegin,cDateOfW)  <<'|' << std::endl;
+        streamText << qSetFieldWidth( 10 ) <<  dWertStart <<'|' ;
+        streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetDepotGrowth(cDateBegin,cDateOfW)  <<'|' ;
+        streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetFondGrowth (cDateBegin,cDateOfW)  <<'|' ;
 
 	}
-	std::cout <<   std::setw( 33 ) << dWertGesammt <<   /*std::setw( 11 ) << dWertGes7 <<*/   std::setw( 11 ) << dWertGes31  <<    std::setw( 11 ) <<  dWertGesStart << std::setw( 11 ) <<  CalculateZins(cDateBegin,cDateOfW) << std::endl;
-	return;
+    streamText <<   qSetFieldWidth( 33 ) << dWertGesammt <<   /*qSetFieldWidth( 11 ) << dWertGes7 <<*/   qSetFieldWidth( 11 ) << dWertGes31  <<    qSetFieldWidth( 11 ) <<  dWertGesStart << qSetFieldWidth( 11 ) <<  CalculateZins(cDateBegin,cDateOfW) ;
+    return strText;
 }
 
 
@@ -277,7 +277,7 @@ double Depot::CalculateZins(const Datum& cdDatLow,const Datum &cdDatHigh)
 	return (dZins-1) * 100;
 }
 
-double Depot::GetMaxDepotSetWert(Datum& cdDatLow, Datum &cdDatHigh)
+double Depot::GetMaxDepotSetWert(QDate& cdDatLow, QDate& cdDatHigh)
 {
 	if ((cdDatLow == cdStart) && (cdEnd == cdDatHigh))
 	{

@@ -22,15 +22,15 @@ class TransActAnt
 public:
     TransActAnt();
     TransActAnt(const int& A);
-	friend std::ostream& operator << (std::ostream& OS, TransActAnt& E);
+    //friend std::ostream& operator << (std::ostream& OS, TransActAnt& E);
 private:
     QDate cDatum;
     double iAnteile;
     int iType; // 0 = Einzahlung
                // 1 = Gewinn
-                // 2 = Datum Ungültig
+               // 2 = Datum Ungültig
 };
-std::ostream& operator << (std::ostream& OS, TransActAnt& E);
+//std::ostream& operator << (std::ostream& OS, TransActAnt& E);
 
 struct DepotTable
 {
@@ -91,7 +91,7 @@ public:
 
 
 
-	std::string sName;
+    //QString sName;
 
 	bool LoadDepotFile(const char*);
 	bool AddDepot(const char* sWKN, int iDepotNr);
@@ -112,38 +112,20 @@ public:
 	DepotPos* operator [] (const int &);
 
 	//void ShowDepotGesamtWertHeute(const Datum &);
-    void ShowDepotGesamtWert(const QDate &);
+    QString ShowDepotGesamtWert(const QDate &);
     double GetCurrentDSTrend(const QDate &, const QDate &);
 	int iTableCount;
-#ifndef _CONSOLE
-	std::deque<wndcre*> dqWindows;
-#endif
-	//Datum D1, D11, D2, D22;
-	/*double	dMaxAnt,dMaxAnt2;
-	double	dMaxFWert,dMaxFWert2;
-	double	dMaxDWert,dMaxDWert2;*/
+
     double GetMaxDepotSetWert(QDate& , QDate &);
-    bool ResetMaxDates()
-    {
-        cdEnd = 0;
-        cdStart = 0;
-        return true;
-    }
+    bool ResetMaxDates();
 
-};
-
-struct ThreadData
-{
-	Depot* pdDepot;
-	char* cFile;
 };
 
 /************** Sort Functions   ***********/
-
 bool SortByDepotNr (DepotPos* ,DepotPos*);
 
 
-DepotPos* GetDepotClass(const char* cData);
+DepotPos* GetDepotClass(const QByteArray &cData);
 void DeleteDepots() ;
 void InitDepots (void* pParam);
 
