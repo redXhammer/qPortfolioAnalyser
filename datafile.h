@@ -6,6 +6,18 @@
 #include <QString>
 #include <QFile>
 #include <QTextStream>
+#include <QDate>
+
+class KursUndDatum
+{
+public:
+    double iKurs;
+    QDate cDatum;
+    //friend std::ostream& operator << (std::ostream& OS, KursUndDatum& E);
+    //friend std::istream& operator >> (std::istream& OS, KursUndDatum& KUD);
+    KursUndDatum& operator = (const KursUndDatum&);
+};
+
 
 typedef QMap<QString , QMap<QString,QString> >::iterator ITdblMAP;
 typedef QMap<QString , QMap<QString,QString> >           DBLmap;
@@ -24,13 +36,13 @@ QFile pFile;
 long lSize;
 
 DBLmap mData;
-QMap<QString , QMap<QString,QList<QString> > > mVect;
+QMap<QString , QMap<QString,QList<KursUndDatum> > > mVect;
 
 
 public:
 // Methoden
-    bool open(const char*);
-    bool save(const char*);
+    bool open(const QString &);
+    bool save(const QString &);
     DataFile() {};
     DataFile(char* cFile){open(cFile);};
     ~DataFile(){};
@@ -38,13 +50,13 @@ public:
     //bool
 
 // mData zugriff
-    bool AddData(const char* cDataClass,const  char* cName,const  char* Value);
-    QString GetData(const char* cDataClass, const char* cName);
-    QString GetData(ITdblMAP itDataClass, const char* cName);
+    bool AddData(const QString& cDataClass, const QString& cName, const QString& Value);
+    QString GetData(const QString& cDataClass, const QString& cName);
+    QString GetData(ITdblMAP itDataClass, const QString& cName);
 
 // mVect zugriff
-    QList<QString>& CreateVect (const char* cDataClass,const  char* cName);
-    QList<QString>& GetVect (const char* cDataClass, const char* cName);
+    QList<KursUndDatum>& CreateVect (const char* cDataClass,const  char* cName);
+    QList<KursUndDatum>& GetVect (const char* cDataClass, const char* cName);
 
     QMap<QString , QMap<QString,QString> >::iterator
         GetDataItBegin(){return mData.begin();};

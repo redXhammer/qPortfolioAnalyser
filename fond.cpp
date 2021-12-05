@@ -14,14 +14,12 @@ typedef unsigned long DWORD;
 
 QDate fond::DateOfWkn()
 {
-    QDate DHelp;
-	DHelp = StrToDate(WknFile.GetData("Fond","LastUpdate"));
-	return DHelp;
+    return QDate::fromString(WknFile.GetData("Fond","LastUpdate"));
 }
 
-const char* fond::GetWknFileName()
+QString fond::GetWknFileName()
 {
-	return sWkn.c_str();
+    return sWkn;
 }
 
 fond::fond(const char* sWkn2) /***************** Konstructor der Fond-Klasse mit übergabe der WKN **************/
@@ -35,7 +33,6 @@ fond::fond(const char* sWkn2) /***************** Konstructor der Fond-Klasse mit
 #ifndef NOOUTPUT
     qInfo() << "Datum der Fonddatei" << DateOfWkn();
 #endif
-	iDateToday = GetDateOfToday();
     iStatus = 1;
 	return;
 }
@@ -52,12 +49,12 @@ bool fond::LoadAllData()
         }
         else
         {
-            WknFile.AddData ("Fond","SECU",cSecu.c_str() ) ;
-            WknFile.AddData ("Fond","URL",STsURL.c_str() ) ;
+            WknFile.AddData ("Fond","SECU",cSecu ) ;
+            WknFile.AddData ("Fond","URL",STsURL ) ;
         }
     }
 
-    WknFile.open( sWknFileName.c_str()); // Öffnen der WKN file
+    WknFile.open( sWknFileName ); // Öffnen der WKN file
     if (LoadFondKurse() < 1)
     {
         WknFile.DropData();
@@ -74,87 +71,52 @@ int fond::LoadFondKurse()
     char c[20];
     KursUndDatum kudHelp;
 
-	std::list<std::string>& vKurse = WknFile.GetVect("Fond","Kurse");
+    QList<KursUndDatum> vKurse = WknFile.GetVect("Fond","Kurse");
 	if (vKurse.size() == 0)
 	{
-		cout << "No File Opened" << endl;
+        qInfo() << "No File Opened";
 		DownloadFondData();
-		cout << "Speichern : " << SaveFondData() << " Einträge" << endl;
-		//itKUDlow = dqKUD.begin();
-        //itKUDhigh = dqKUD.begin();
-        //itKUDhigh++;
+        qInfo() << "Speichern : " << SaveFondData() << " Einträge";
+
         iKUD = 0;
         iStatus = 0;
 		return dqKUD.size();
 	}
-    std::list<std::string>::iterator itKurs = vKurse.begin();
-    stringstream ssKurse;
-    ssKurse << *itKurs;
-    ssKurse >> c;
-    kudHelp.cDatum = (int) atoi(c);
-    ssKurse >> c;
-    kudHelp.iKurs = atof(c);
 
+    kudHelp = vKurse.at(0);
 
 	if ((DateOfWkn() < (iDateToday)) || AKTUALISIEREN) /************** Beginn des Aktualisierungsprozess *************/
 	{
 #ifndef NOOUTPUT
-		cout << "Datum des letzen lokalen Fondeintrags: " << kudHelp.cDatum << endl;
-		cout << "Aktualisiere ... ";
+        qInfo() << "Datum des letzen lokalen Fondeintrags: " << kudHelp.cDatum;
+        qInfo() << "Aktualisiere ... ";
 #endif
 
 		DownloadFondData(kudHelp.cDatum);
 
 #ifndef NOOUTPUT
-		cout << "Fertig" << endl;
+        qInfo() << "Fertig";
 #endif
 
 
-		dqKUD.push_back(kudHelp);
-		itKurs++;
-		while(itKurs!=vKurse.end())
-		{
-		    ssKurse.clear();
-		    ssKurse << *itKurs;
-			ssKurse >> c;
-			kudHelp.cDatum = (int) atoi(c);
-			ssKurse >> c;
-			kudHelp.iKurs = atof(c);
-			dqKUD.push_back(kudHelp);
-			itKurs++;
-		}
+        dqKUD.append(vKurse);
+
     #ifndef NOOUTPUT
-		cout << "Speichern : " << SaveFondData() << " Einträge" << endl;
+        qInfo() << "Speichern : " << SaveFondData() << " Einträge";
 	#else
 		SaveFondData();
     #endif
 	} else {
-		dqKUD.push_back(kudHelp);
     #ifndef NOOUTPUT
-		cout <<"First: " << kudHelp.cDatum << " "<< kudHelp.iKurs << endl;
+        qInfo() <<"First: " << kudHelp.cDatum << " "<< kudHelp.iKurs;
     #endif
-		itKurs++;
-		while(itKurs!=vKurse.end())
-		{
-            if (!ssKurse.eof()) cout << "Not EOF" << endl;
-		    ssKurse.clear();
-		    ssKurse << (*itKurs);
-		    if (ssKurse.eof()) cout << "EOF" << endl;
-			ssKurse >> c;
-			kudHelp.cDatum = (int) atoi(c);
-			ssKurse >> c;
-			kudHelp.iKurs = atof(c);
-			//cout << *itKurs<< " "<< kudHelp   ;
-			itKurs++;
-			dqKUD.push_back(kudHelp);
-		}
+        dqKUD.append(vKurse);
     #ifndef NOOUTPUT
-		cout <<"Last: " << kudHelp.cDatum << " "<< kudHelp.iKurs << endl;
+        kudHelp = dqKUD.back();
+        qInfo() <<"Last: " << kudHelp.cDatum << " "<< kudHelp.iKurs;
     #endif
 	}
-    //itKUDlow = dqKUD.begin();
-	//itKUDhigh = dqKUD.begin();
-	//itKUDhigh++;
+
 	iKUD = 0;
 	iStatus = 0;
     return dqKUD.size();
@@ -245,9 +207,9 @@ int fond::LoadFondAuss()
     return 0;
 }
 
-std::deque<KursUndDatum> fond::DownloadFondAuss()
+QList<KursUndDatum> fond::DownloadFondAuss()
 {
-    std::deque<KursUndDatum> dqAuss;
+    QList<KursUndDatum> dqAuss;
     cSecu = WknFile.GetData("Fond","SECU") ;
 
 
@@ -609,7 +571,7 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
 {
 
 
-	std::string cUrl =  "http://www.ariva.de/search/livesearch.m?searchname=";
+    QString cUrl =  "http://www.ariva.de/search/livesearch.m?searchname=";
 	cUrl += cSearch;
 
     html hSite;
@@ -624,8 +586,6 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
     if (hSite.cdTotalDir("/div/table/tr/td1/a") == false) return false;
     sHelp =  hSite.hCurrentNode->vectHtmlParams[0];
     sURL = sHelp.substr(6,sHelp.size()-7);
-
-
 
 	return true;
 }
@@ -646,7 +606,7 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
     itVect = pVect->begin();
     iBufSize = iBuffersize;
 #ifndef NOOUTPUT
-    cout << "Opening Vectorstream with Initial " << pV->size() << " Elements" << endl;
+    qInfo() << "Opening Vectorstream with Initial " << pV->size() << " Elements";
 #endif
     if (iBuffersize)
     {

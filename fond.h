@@ -12,20 +12,10 @@
 
 bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL);
 
-class KursUndDatum
-{
-public:
-    double iKurs;
-    QDate cDatum;
-    //friend std::ostream& operator << (std::ostream& OS, KursUndDatum& E);
-    //friend std::istream& operator >> (std::istream& OS, KursUndDatum& KUD);
-    KursUndDatum& operator = (KursUndDatum&);
-};
-
 class fond
 {
 private:
-	http cHttp;
+    //http cHttp;
 	DataFile WknFile;
     QDate DateOfWkn();
 
@@ -48,18 +38,18 @@ public:
     fond() : iKUD(0) {}
 	fond(const char* sWkn);
 	bool LoadAllData();
-    int DownloadFondData(QDate cdMax = 0);
+    int DownloadFondData(QDate cdMax = QDate());
     int DownloadData(QDate, QDate, int iBoerseID = 6,bool bClean_Split = false, bool bClean_Payout = false ,bool bClean_Bezug = false); // 6 Xetra // 8 Fonds
 	int LoadFondKurse();
 	int LoadFondAuss();
-	std::deque<KursUndDatum> DownloadFondAuss();
+    QList<KursUndDatum> DownloadFondAuss();
 	int SaveFondData();
     double GetCurrentWert(const QDate&);
     double GetAussFactor(const QDate&);
     double GetTotalWert(const QDate &);
     double GetCurrentAverage(const QDate &cDatum, int iTage);
 	void DownloadFundamental();
-	const char* GetWknFileName();
+    QString GetWknFileName();
 
 
 	// Daten:
@@ -145,13 +135,13 @@ protected:
 
 
 #ifdef FondFile
-Datum iDateToday;
+QDate iDateToday;
 //int iCountFonds = 0;
 //fond* apFonds[50];
 FondStorage fsAllFonds;
 #else
 
-extern Datum iDateToday;
+extern QDate iDateToday;
 //extern int iCountFonds;
 //extern fond* apFonds[50];
 extern FondStorage fsAllFonds;

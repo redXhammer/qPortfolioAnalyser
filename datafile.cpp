@@ -2,6 +2,20 @@
 
 #include <QDebug>
 
+QTextStream& operator<< (QTextStream& stream, const KursUndDatum &kud)
+{
+    stream << kud.cDatum.toString() << kud.iKurs;
+    return stream;
+}
+
+QTextStream& operator>> (QTextStream& stream, KursUndDatum &kud)
+{
+    QString date;
+    stream >> date >> kud.iKurs;
+    kud.cDatum = QDate::fromString(date);
+    return stream;
+}
+
 //QTextStream& operator<< (QTextStream& stream, )
 template <class KK, class TT>
 QTextStream& operator<< (QTextStream& stream, const QMap<KK, TT> &map)
@@ -60,7 +74,7 @@ QTextStream& operator>> (QTextStream& stream, QList<T> &list)
     return stream;
 }
 
-bool DataFile::open(const char* cFileOpen)
+bool DataFile::open(const QString& cFileOpen)
 {  /****************** Datei öffnen, laden **************/
 #ifndef NOOUTPUT
     qInfo() << "Try to open " << cFileOpen;
@@ -77,7 +91,7 @@ bool DataFile::open(const char* cFileOpen)
     return true;
 }
 
-bool DataFile::save(const char* cFileOpen)
+bool DataFile::save(const QString &cFileOpen)
 {  /****************** Datei öffnen, speichern **************/
     qInfo() << "Try to open " << cFileOpen;
     pFile.setFileName(cFileOpen);
@@ -93,7 +107,7 @@ bool DataFile::save(const char* cFileOpen)
     return true;
 }
 
-bool DataFile::AddData(const char* cDataClass,const  char* cName,const  char* Value)
+bool DataFile::AddData(const QString& cDataClass, const QString& cName, const QString& Value)
 {
     mData[cDataClass][cName] = Value;
 #ifndef NOOUTPUT
@@ -102,7 +116,7 @@ bool DataFile::AddData(const char* cDataClass,const  char* cName,const  char* Va
     return true;
 }
 
-QString DataFile::GetData(const char* cDataClass,const  char* cName)
+QString DataFile::GetData(const QString &cDataClass, const QString &cName)
 {
     ITdblMAP itDataMarker = mData.find(cDataClass);
     if (itDataMarker != mData.end())
@@ -116,7 +130,7 @@ QString DataFile::GetData(const char* cDataClass,const  char* cName)
     return "";
 }
 
-QString DataFile::GetData(ITdblMAP itDataClass, const char* cName)
+QString DataFile::GetData(ITdblMAP itDataClass, const QString &cName)
 {
     if (itDataClass != mData.end())
     {
@@ -129,13 +143,13 @@ QString DataFile::GetData(ITdblMAP itDataClass, const char* cName)
     return "";
 }
 
-QList<QString> &DataFile::CreateVect(const char* cDataClass,const  char* cName)
+QList<KursUndDatum> &DataFile::CreateVect(const char* cDataClass,const  char* cName)
 {
     return mVect[cDataClass][cName];
 }
 
 
-QList<QString> &DataFile::GetVect(const char* cDataClass, const char* cName)
+QList<KursUndDatum> &DataFile::GetVect(const char* cDataClass, const char* cName)
 {
     return mVect[cDataClass][cName];
 }
