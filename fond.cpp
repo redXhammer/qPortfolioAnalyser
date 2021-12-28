@@ -1,6 +1,7 @@
 #define FondFile
 #include "fond.h"
-#include <boost/algorithm/string.hpp>
+
+
 
 #define MAXBUFSIZE 100000
 #define MAXBUFCOUNT MAXBUFSIZE / 13
@@ -68,7 +69,6 @@ bool fond::LoadAllData()
 
 int fond::LoadFondKurse()
 {
-    char c[20];
     KursUndDatum kudHelp;
 
     QList<KursUndDatum> vKurse = WknFile.GetVect("Fond","Kurse");
@@ -128,39 +128,42 @@ int fond::LoadFondAuss()
     //if (DateOfWkn() < iDateToday)
     {
         html hSite;
-        std::string sUrlHistEig = "http://www.ariva.de";
+        QString sUrlHistEig = "http://www.ariva.de";
         sUrlHistEig += STsURL;
         sUrlHistEig += "/historische_ereignisse";
-        hSite.open(sUrlHistEig.c_str());
+        hSite.open(sUrlHistEig);
 
         hSite.cdTotalDir("/html/body/div3/div2/div8/div/table");
 
-        std::vector<HtmlNode*> vhnTR = hSite.hCurrentNode->GetElementsByName("tr");
+        QVector<HtmlNode*> vhnTR = hSite.hCurrentNode->GetElementsByName("tr");
 
-        for (size_t iElem = 1; iElem < vhnTR.size(); iElem++)
+        for (int iElem = 1; iElem < vhnTR.size(); iElem++)
         {
             HtmlNode* hnNode = vhnTR[iElem];
 
-            if (strcmp("Dividende",hnNode->GetElementsByName("td")[1]->vectHtmlChildNode[0]->sName.c_str()) == 0)
+            if (QString("Dividende") == hnNode->GetElementsByName("td")[1]->vectHtmlChildNode[0]->sName)
             {
                 if (hnNode->GetElementsByName("td")[3]->vectHtmlChildNode.size() == 0) continue;
 
-                cout << "Divi am " << hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName << " mit "// Datum
-                    << hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName << " Euro (";
+
 
 
                 KursUndDatum kudAuss;
-                size_t iPosRev = hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName.rfind(',');
+                int iPosRev = hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName.lastIndexOf(',');
 
-                double dAussWert = atof(hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName.replace(iPosRev,1,".") .c_str());
+                double dAussWert = hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName.replace(iPosRev,1,".").toDouble(/*&bOK*/) ;
 
-                kudAuss.cDatum = StrToDate(hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName) - 1;
+                kudAuss.cDatum = QDate::fromString(hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName); // - 1;
                 double dCurrWert = GetCurrentWert(kudAuss.cDatum);
-                cout << dAussWert<<"," << dCurrWert<< ") (";
+
 
                 kudAuss.iKurs = 1;
                 kudAuss.iKurs += dAussWert/GetCurrentWert(kudAuss.cDatum);
-                cout << kudAuss.iKurs << ")" << endl;
+
+                qInfo() << "Divi am " << hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName
+                        << " mit "    << hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName
+                        << " Euro ("  << dAussWert<< "," << dCurrWert
+                        << ") ("      << kudAuss.iKurs << ")";
 
                 if (dCurrWert == 0) continue;
 
@@ -174,35 +177,33 @@ int fond::LoadFondAuss()
                 itAussHigh++;
             }
 
-            else if (strcmp("Split",hnNode->GetElementsByName("td")[1]->vectHtmlChildNode[0]->sName.c_str()) == 0)
+            else if (QString("Split") == hnNode->GetElementsByName("td")[1]->vectHtmlChildNode[0]->sName)
             {
-                cout << "Split am " << hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName << " mit Verhältnis "// Datum
-                    << hnNode->GetElementsByName("td")[2]->vectHtmlChildNode[0]->sName << " (";
-
                 KursUndDatum kudAuss;
 
-                std::string sVerh = hnNode->GetElementsByName("td")[2]->vectHtmlChildNode[0]->sName;
-                size_t iPos = sVerh.find(":");
+                QString sVerh = hnNode->GetElementsByName("td")[2]->vectHtmlChildNode[0]->sName;
+                int iPos = sVerh.indexOf(":");
 
-                kudAuss.cDatum = StrToDate(hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName) - 1;
+                kudAuss.cDatum = QDate::fromString(hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName); // - 1;
 
                 //kudAuss.iKurs = 0;
-                kudAuss.iKurs = atof(sVerh.substr(iPos+1).c_str())/atof(sVerh.substr(0,iPos).c_str());
+                kudAuss.iKurs = sVerh.mid(iPos+1).toDouble(/*&bOK*/) / sVerh.mid(0,iPos).toDouble(/*&bOK*/);
+
                 if (dqAusschuettung.size()>0) {
                     kudAuss.iKurs *= (dqAusschuettung.back().iKurs);
                 }
-                cout << kudAuss.iKurs << ")" << endl;
+
+
+                qInfo() << "Split am "        << hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName
+                        << " mit Verhältnis " << hnNode->GetElementsByName("td")[2]->vectHtmlChildNode[0]->sName
+                        << " ("               << kudAuss.iKurs << ")";
+
                 dqAusschuettung.push_back(kudAuss);
                 itAussHigh = dqAusschuettung.begin();
                 itAussLow = itAussHigh;
                 itAussHigh++;
-
-
             }
-
         }
-
-
     }
     return 0;
 }
@@ -231,21 +232,22 @@ int fond::SaveFondData()
 
 
 	if(!osSave.good()) {
-		cout << "fond::SaveFondData--Kann nicht schreiben-" << sWknFileName << endl;
+        qInfo() << "fond::SaveFondData--Kann nicht schreiben-" << sWknFileName;
 	}else{
 
-		deque<KursUndDatum>::iterator vIt(dqKUD.begin());  // Iterator am Anfang des Vektors
+        QList<KursUndDatum>::iterator vIt(dqKUD.begin());  // Iterator am Anfang des Vektors
 		for (;vIt != dqKUD.end(); vIt++)
 		{
-			if ((*vIt).cDatum.iDatum > 1)
-			osSave << *vIt ;
+            if ((*vIt).cDatum.isValid())
+                osSave << *vIt ;
+
 			osSave.flush();
 			iSaveCount++;
 		}
-		WknFile.AddData("Fond","LastUpdate",iDateToday.GetDateAsChars().c_str());
-		WknFile.save(sWknFileName.c_str());
+        WknFile.AddData("Fond","LastUpdate",iDateToday.toString());
+        WknFile.save(sWknFileName);
 #ifndef LOWOUTPUT
-		cout << "geschrieben" << endl;
+        qInfo() << "geschrieben";
 #endif
 	}
 	return iSaveCount;
@@ -255,7 +257,7 @@ int fond::SaveFondData()
 
 
 
-int fond::DownloadFondData(Datum cdMax) {
+int fond::DownloadFondData(QDate cdMax) {
 
 	//int iPage = 0;
 	int iNewDataCount = 0;
@@ -273,19 +275,19 @@ int fond::DownloadFondData(Datum cdMax) {
     if (sBID.length() == 0)
     {
         html hSite;
-        std::string cUrl =  "http://www.ariva.de";
+        QString cUrl =  "http://www.ariva.de";
         cUrl += STsURL;
         cUrl += "/historische_kurse";
-        hSite.open(cUrl.c_str());
+        hSite.open(cUrl);
         hSite.cdTotalDir("/html/body/div3/div2/div8/div2/ul2");
 
-        std::vector<HtmlNode*> vhtmlnodeListTR;
-        std::vector<HtmlNode*>::iterator itNodeFromList;
+        QVector<HtmlNode*> vhtmlnodeListTR;
+        QVector<HtmlNode*>::iterator itNodeFromList;
         vhtmlnodeListTR = hSite.hCurrentNode->GetElementsByName("li");
 
         int iAnz = 0;
-        std::string sBID2 ;
-        std::string sBoerse;
+        QString sBID2 ;
+        QString sBoerse;
 
         for (itNodeFromList = vhtmlnodeListTR.begin();
             itNodeFromList != vhtmlnodeListTR.end();
@@ -295,30 +297,31 @@ int fond::DownloadFondData(Datum cdMax) {
             pNode = pNode->GetElementsByName("a")[0]; //a mit href -> BID
             sBID = pNode->vectHtmlParams[0];
 
-            std::string sNumData;
-            if (strcmp(pNode->vectHtmlParams[1].c_str(),"class=\"bold")==0)
+            QString sNumData;
+            if (pNode->vectHtmlParams[1] == "class=\"bold")
                 sNumData = pNode->vectHtmlParams[5] ;
             else
                 sNumData = pNode->vectHtmlParams[3] ;
 
-            if (iAnz < atoi( sNumData.substr(17).c_str() ))
+            if (iAnz < sNumData.mid(17).toInt(/* bOK */) )
             {
-                size_t iPosBoerseId = sBID.rfind("boerse_id") + 10;
-                size_t iPosTueddel = sBID.rfind("\"");
-                sBID2 = sBID.substr(iPosBoerseId,iPosTueddel-iPosBoerseId).c_str();
-                iAnz = atoi( sNumData.substr(17).c_str());
+                size_t iPosBoerseId = sBID.lastIndexOf("boerse_id") + 10;
+                size_t iPosTueddel = sBID.lastIndexOf("\"");
+                sBID2 = sBID.mid(iPosBoerseId,iPosTueddel-iPosBoerseId);
+                iAnz = sNumData.mid(17).toDouble(/* bOK */);
                 pNode = pNode->vectHtmlChildNode[0]; // Name
                 sBoerse = pNode->sName;
             }
 
         }
-        int iBID = atoi(sBID2.c_str());
+
+        int iBID = sBID2.toInt(/* bOK */);
         qInfo() << "Benutze: " << sBoerse << " (" << iBID << ")";
 
-        WknFile.AddData("Fond","BoerseID",sBID2.c_str());
+        WknFile.AddData("Fond","BoerseID",sBID2);
         if (DownloadData(cdMax, iDateToday,iBID) != 0) {iStatus = 2;return -1;}
     } else {
-        int iBID = atoi(sBID.c_str());
+        int iBID = sBID.toInt(/* bOK */);
         if (DownloadData(cdMax, iDateToday,iBID) != 0) {iStatus = 2;return -1;}
     }
 
@@ -338,7 +341,7 @@ int fond::DownloadFondData(Datum cdMax) {
 	cHttp.Empty();
 
 #ifndef NOOUTPUT
-	cout << "Anzahl neuer Einträge: " << iNewDataCount;
+    qInfo() << "Anzahl neuer Einträge: " << iNewDataCount;
 	if (iNewDataCount > 0) cout << "aktuellstes Datum: " << dqKUD.at(0).cDatum;
 #endif
 
@@ -346,7 +349,7 @@ int fond::DownloadFondData(Datum cdMax) {
 }
 
 
-int fond::DownloadData(Datum DStart, Datum DEnd, int iBoerseID,bool bClean_Split, bool bClean_Payout ,bool bClean_Bezug)
+int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Split, bool bClean_Payout ,bool bClean_Bezug)
 {
 
 #ifndef NOOUTPUT

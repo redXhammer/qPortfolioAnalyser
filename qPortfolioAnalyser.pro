@@ -20,6 +20,7 @@ SOURCES += \
     depot.cpp \
     fond.cpp \
     html.cpp \
+    http.cpp \
     main.cpp \
     mainwindow.cpp \
     polynom.cpp
@@ -29,6 +30,7 @@ HEADERS += \
     depot.h \
     fond.h \
     html.h \
+    http.h \
     mainwindow.h \
     polynom.h
 

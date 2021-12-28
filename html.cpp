@@ -85,7 +85,6 @@ int html::open(QString cLocation)
 
     char cBeginNode;
     QFile fbFile;
-    std::stringbuf sbString;
     QByteArray sBuf;
     HtmlNode *pCurrentParentNode = &hnEntryNode;
 
@@ -130,11 +129,10 @@ int html::open(QString cLocation)
         IStream >> cBeginNode;
         if (cBeginNode == '<')
         {
-            IStream.get();
             QString sNodeContent;
             getline(IStream,sNodeContent,'>');
 
-            qInfo() << "Processing: " << sNodeContent << endl;
+            qInfo() << "Processing: " << sNodeContent;
 
             if (sNodeContent[0] != '/')
             {

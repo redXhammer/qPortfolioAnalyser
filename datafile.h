@@ -8,16 +8,6 @@
 #include <QTextStream>
 #include <QDate>
 
-class KursUndDatum
-{
-public:
-    double iKurs;
-    QDate cDatum;
-    //friend std::ostream& operator << (std::ostream& OS, KursUndDatum& E);
-    //friend std::istream& operator >> (std::istream& OS, KursUndDatum& KUD);
-    KursUndDatum& operator = (const KursUndDatum&);
-};
-
 
 typedef QMap<QString , QMap<QString,QString> >::iterator ITdblMAP;
 typedef QMap<QString , QMap<QString,QString> >           DBLmap;

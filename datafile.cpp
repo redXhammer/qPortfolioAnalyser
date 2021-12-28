@@ -25,7 +25,7 @@ QTextStream& operator<< (QTextStream& stream, const QMap<KK, TT> &map)
     typename QMap<KK, TT>::const_iterator it;
     for (it = map.begin(); it != map.end(); it++)
     {
-        stream << it.key() << it.value() << endl;
+        stream << it.key() << it.value() << Qt::endl;
     }
     return stream;
 }
@@ -111,7 +111,7 @@ bool DataFile::AddData(const QString& cDataClass, const QString& cName, const QS
 {
     mData[cDataClass][cName] = Value;
 #ifndef NOOUTPUT
-    qInfo() << "Adding " << cDataClass << " " << cName << " " << Value << endl;
+    qInfo() << "Adding " << cDataClass << " " << cName << " " << Value;
 #endif
     return true;
 }

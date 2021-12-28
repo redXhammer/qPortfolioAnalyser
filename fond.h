@@ -2,7 +2,9 @@
 
 #ifndef FondFileHeader
 #define FondFileHeader
-//#include "http.h"
+#include "html.h"
+#include "http.h"
+
 #include <deque>
 #include <map>
 
@@ -15,7 +17,7 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL);
 class fond
 {
 private:
-    //http cHttp;
+    http cHttp;
 	DataFile WknFile;
     QDate DateOfWkn();
 
