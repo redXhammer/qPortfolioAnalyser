@@ -609,7 +609,7 @@ int http::recv()
     sHttpData.clear();
     ostringstream fout;
 
-    if(size != noSizeGiven) // Wenn die Größe über Content-length gegeben wurde
+    if(size != noSizeGiven) // Wenn die GrÃ¶ÃŸe Ã¼ber Content-length gegeben wurde
     {
 //        cout << "0%";
         while(recvSize < size)
@@ -628,7 +628,7 @@ int http::recv()
         if(!chunked)
         {
  //           cout << "Downloading... (Unknown Filesize)" << endl;
-            while(bytesRecv != 0) // Wenn recv 0 zurück gibt, wurde die Verbindung beendet
+            while(bytesRecv != 0) // Wenn recv 0 zurÃ¼ck gibt, wurde die Verbindung beendet
             {
                 if((bytesRecv = RecvBuf(cBuf,BufSize)) < 0)
                 {
@@ -645,7 +645,7 @@ int http::recv()
                 stringstream sstream;
                 GetLine(sstream);
                 chunkSize = -1;
-                sstream >> hex >> chunkSize; // Größe des nächsten Parts einlesen
+                sstream >> hex >> chunkSize; // GrÃ¶ÃŸe des nÃ¤chsten Parts einlesen
                 if(chunkSize <= 0)
                 {
                     break;
