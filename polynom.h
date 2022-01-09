@@ -14,7 +14,7 @@ struct PolynomElement
 	double exponent;
 };
 
-class polynom : public std::deque<PolynomElement>
+class polynom : public QList<PolynomElement>
 {
 public:
 	polynom();

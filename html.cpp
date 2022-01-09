@@ -2,8 +2,9 @@
 #include <QDebug>
 
 #include <QByteArray>
-
+#include <QBuffer>
 #include <QFile>
+#include <QTextStream>
 
 /** @brief (one liner)
   *
@@ -80,9 +81,6 @@ QString HtmlNode::GetCurrentPath()
   */
 int html::open(QString cLocation)
 {
-    //using boost::algorithm::trim;
-    //using boost::algorithm::erase_all;
-
     char cBeginNode;
     QFile fbFile;
     QByteArray sBuf;
@@ -122,7 +120,7 @@ int html::open(QString cLocation)
         return -1;
     }
 
-    QTextStream IStream(sBuf);
+    MyTextStream IStream(sBuf);
 
     while (!IStream.atEnd())
     {
@@ -130,7 +128,7 @@ int html::open(QString cLocation)
         if (cBeginNode == '<')
         {
             QString sNodeContent;
-            getline(IStream,sNodeContent,'>');
+            sNodeContent = IStream.readUntil('>');
 
             qInfo() << "Processing: " << sNodeContent;
 
@@ -143,60 +141,62 @@ int html::open(QString cLocation)
                     qFatal( "Node Not Contructed");
                     return -1;
                 }
-                int iEndOfName = sNodeContent.find(' ');
+                int iEndOfName = sNodeContent.indexOf(' ');
                 size_t itStr = 0;
-                while ((itStr=sNodeContent.find_first_of('\r',itStr)) != std::string::npos)
+                while ((itStr=sNodeContent.indexOf('\r',itStr)) != std::string::npos)
                 {
-                    sNodeContent.erase(itStr,1);
+                    sNodeContent.remove(itStr,1);
                 }
                 itStr = 0;
-                while ((itStr=sNodeContent.find_first_of('\n',itStr)) != std::string::npos)
+                while ((itStr=sNodeContent.indexOf('\n',itStr)) != std::string::npos)
                 {
-                    sNodeContent.erase(itStr,1);
+                    sNodeContent.remove(itStr,1);
                 }
-                phmNewNode->sName = sNodeContent.substr(0,iEndOfName);
-                sNodeContent = sNodeContent.substr(iEndOfName+1);
+                phmNewNode->sName = sNodeContent.mid(0,iEndOfName);
+                sNodeContent = sNodeContent.mid(iEndOfName+1);
 
-                while (!sNodeContent.empty())
+                while (!sNodeContent.isEmpty())
                 {
-                    iEndOfName = sNodeContent.find(' ');
+                    iEndOfName = sNodeContent.indexOf(' ');
                     if (iEndOfName == -1)
                     {
-                        std::string sParam = sNodeContent;
-                        trim(sParam);
-                        erase_all(sParam, "\r");
-                        erase_all(sParam, "\n");
+                        QString sParam = sNodeContent.trimmed();
+                        sParam.remove('\r');
+                        sParam.remove('\n');
                         if (sParam.length() > 0)
                             phmNewNode->vectHtmlParams.push_back(sParam);
                         break;
                     }
                     else
                     {
-                        std::string sParam = sNodeContent.substr(0,iEndOfName);
-                        trim(sParam);
-                        erase_all(sParam, "\r");
-                        erase_all(sParam, "\n");
+                        QString sParam = sNodeContent.mid(0,iEndOfName).trimmed();
+                        sParam.remove('\r');
+                        sParam.remove('\n');
                         if (sParam.length() > 0)
                             phmNewNode->vectHtmlParams.push_back(sParam);
-                        sNodeContent = sNodeContent.substr(iEndOfName+1);
+                        sNodeContent = sNodeContent.mid(iEndOfName+1);
                     }
 
                 }
 
 
                 pCurrentParentNode->vectHtmlChildNode.push_back(phmNewNode);
-                cout << "Created new Node. Name: " << phmNewNode->sName << " as Subelement No. " << pCurrentParentNode->vectHtmlChildNode.size() << " in " << pCurrentParentNode->sName << " with " << phmNewNode->vectHtmlParams.size() << " Params." << endl;
+                qInfo() << "Created new Node. Name: " << phmNewNode->sName
+                     << " as Subelement No. " << pCurrentParentNode->vectHtmlChildNode.size()
+                     << " in " << pCurrentParentNode->sName
+                     << " with " << phmNewNode->vectHtmlParams.size()
+                     << " Params.";
                 pCurrentParentNode = pCurrentParentNode->vectHtmlChildNode.back();
             }
             else
             {
                 // Close Node
-                sNodeContent.erase(0,1);
-                int iEndOfName = sNodeContent.find(' ');
+                sNodeContent.remove(0,1);
+                int iEndOfName = sNodeContent.indexOf(' ');
                 if (iEndOfName != -1)
-                    sNodeContent.erase(iEndOfName);
+                    sNodeContent.remove(iEndOfName);
 
-                std::cout << "Closeing " << sNodeContent << " : " << std::endl ;
+                qInfo() << "Closeing " << sNodeContent << " : ";
                 while (pCurrentParentNode->sName != sNodeContent &&
                        pCurrentParentNode->phnParentNode != &hnEntryNode &&
                        pCurrentParentNode != &hnEntryNode)
@@ -239,7 +239,7 @@ int html::open(QString cLocation)
                 }
 
                 //pCurrentParentNode = pCurrentParentNode->phnParentNode;
-                cout << "Moving back to " << pCurrentParentNode->sName << "." << endl;
+                qInfo() << "Moving back to " << pCurrentParentNode->sName << ".";
 
             }
 
@@ -248,24 +248,24 @@ int html::open(QString cLocation)
         else
         {
 
-            std::string sNodeContent;
-            getline(IStream,sNodeContent,'<');
+            QString sNodeContent;
+            sNodeContent = IStream.readUntil('<');
             IStream.putback('<');
             //cout << "Processing Text: " << sNodeContent << endl;
-            size_t itStr = 0;
-            while ((itStr=sNodeContent.find_first_of('\r',itStr)) != std::string::npos)
+            int itStr = 0;
+            while ((itStr=sNodeContent.indexOf('\r',itStr)) != -1)
             {
-                sNodeContent.erase(itStr,1);
+                sNodeContent.remove(itStr,1);
             }
             itStr = 0;
-            while ((itStr=sNodeContent.find_first_of('\n',itStr)) != std::string::npos)
+            while ((itStr=sNodeContent.indexOf('\n',itStr)) != -1)
             {
-                sNodeContent.erase(itStr,1);
+                sNodeContent.remove(itStr,1);
             }
 
             while (sNodeContent.length() > 0)
             {
-                if (sNodeContent[0] == ' ') sNodeContent.erase(0,1);
+                if (sNodeContent[0] == ' ') sNodeContent.remove(0,1);
                 else break;
             }
             if (sNodeContent.length() > 0)
@@ -319,7 +319,7 @@ int html::open(QString cLocation)
 bool HtmlNode::CheckSubNodes()
 {
     //std::cout << "Checking " << sName << " with " << vectHtmlChildNode.size() << " subnodes" << std::endl;
-    for (size_t i = 0;i < vectHtmlChildNode.size(); i++)
+    for (int i = 0;i < vectHtmlChildNode.size(); i++)
     {
         vectHtmlChildNode[i]->phnParentNode = this;
 
@@ -330,8 +330,8 @@ bool HtmlNode::CheckSubNodes()
 
 bool HtmlNode::List()
 {
-    for (size_t i = 0;i < vectHtmlChildNode.size(); i++)
-        std::cout << vectHtmlChildNode[i]->sName << std::endl;
+    for (int i = 0;i < vectHtmlChildNode.size(); i++)
+        qInfo() << vectHtmlChildNode[i]->sName;
 
     return true;
 }
@@ -340,12 +340,11 @@ HtmlNode* HtmlNode::GetSubNode(QString cName)
 {
     qInfo() << "Going into " << cName;
 
-    for (size_t i = 0;i < vectHtmlChildNode.size(); i++)
-        if (strcmp(vectHtmlChildNode[i]->sName.c_str(),cName) == 0)
+    for (int i = 0;i < vectHtmlChildNode.size(); i++)
+        if (vectHtmlChildNode[i]->sName.compare(cName) == 0)
             return vectHtmlChildNode[i];
     qInfo()<< "Not Found";
     return 0;
-
 }
 
 
@@ -355,15 +354,15 @@ bool html::CheckTree()
     return hnEntryNode.CheckSubNodes();
 }
 
-std::vector<HtmlNode*> HtmlNode::GetElementsByName(const char* cName)
+QVector<HtmlNode*> HtmlNode::GetElementsByName(const QString &cName)
 {
-    std::vector<HtmlNode*> vectElements;
-    std::vector<HtmlNode*>::iterator itHtmlChildNode = vectHtmlChildNode.begin();
+    QVector<HtmlNode*> vectElements;
+    QVector<HtmlNode*>::iterator itHtmlChildNode = vectHtmlChildNode.begin();
 
     for (;itHtmlChildNode != vectHtmlChildNode.end();itHtmlChildNode++)
     {
-        std::string sNodeName = (*itHtmlChildNode)->sName;
-        int iRes = strcmp(sNodeName.c_str(), cName);
+        QString sNodeName = (*itHtmlChildNode)->sName;
+        int iRes = sNodeName.compare(cName);
         if (!iRes)
         {
             //std::cout << sNodeName << " added" << std::endl;
@@ -380,24 +379,26 @@ int html::PrintChildNodes (HtmlNode& vectNode, bool bOptions)
 {
     static int iLayer = -1;
     iLayer++;
-    std::vector<HtmlNode*>::iterator itHtmlChildNode = vectNode.vectHtmlChildNode.begin();
+    QVector<HtmlNode*>::iterator itHtmlChildNode = vectNode.vectHtmlChildNode.begin();
 
     for (;itHtmlChildNode!= vectNode.vectHtmlChildNode.end(); itHtmlChildNode++)
     {
+        QByteArray buf;
+        QTextStream cout(&buf);
+
         for (int iFor = 0; iFor < iLayer;iFor++) cout << " |";
-        cout << "-";
-        cout << (*itHtmlChildNode)->sName;
+        cout << "-" << (*itHtmlChildNode)->sName;
         if (bOptions) {
-            std::vector<std::string>::iterator itParam = (*itHtmlChildNode)->vectHtmlParams.begin();
+            QVector<QString>::iterator itParam = (*itHtmlChildNode)->vectHtmlParams.begin();
             for (;itParam != (*itHtmlChildNode)->vectHtmlParams.end();itParam++)
             {
-                std::string sStr = *itParam;
-                cout << '\n' << sStr;
+                cout << endl << *itParam;
             }
         }
         cout << endl;
-        PrintChildNodes (**itHtmlChildNode,bOptions);
+        qInfo().noquote() << buf;
 
+        PrintChildNodes (**itHtmlChildNode,bOptions);
     }
     iLayer--;
     return 0;
@@ -430,23 +431,22 @@ bool html::cdUp()
             if (Helper != 0)
             {
                 hCurrentNode = Helper;
-                cout << "Current Dir: " << hCurrentNode->GetCurrentPath() << endl;
+                qInfo() << "Current Dir: " << hCurrentNode->GetCurrentPath();
                 hCurrentNode->List();
                 return true;
             }
             else
             {
-                cout << "On Top Dir: " << hCurrentNode->GetCurrentPath() << endl;
+                qInfo() << "On Top Dir: " << hCurrentNode->GetCurrentPath();
                 hCurrentNode->List();
                 return false;
             }
 
 }
 
-bool html::cdDown(std::string str,bool bList)
+bool html::cdDown(QString str,bool bList)
 {
-
-    std::vector<HtmlNode*> vH = hCurrentNode->GetElementsByName(str.c_str());
+    QVector<HtmlNode*> vH = hCurrentNode->GetElementsByName(str);
     if (vH.size() == 1)
         hCurrentNode = vH[0];
     else if (vH.size() == 0)
@@ -454,48 +454,46 @@ bool html::cdDown(std::string str,bool bList)
         int iDig = 0;
         int iNumDig = 0;
         int iLenStr = str.size();
-        const char * cName = str.c_str();
 
         while (iLenStr>iDig++)
-            if ( isdigit(cName[iDig]) ) iNumDig++;
+            if ( str[iDig].isDigit() ) iNumDig++;
 
-//        cout << "|" << str.substr(iLenStr-iNumDig) << "|,|" << str.substr(0,iLenStr-iNumDig) << "|" << endl;
+//        qInfo() << "|" << str.substr(iLenStr-iNumDig) << "|,|" << str.substr(0,iLenStr-iNumDig) << "|";
 
-        int iNr = atoi(str.substr(iLenStr-iNumDig).c_str()) -1;
-        vH = hCurrentNode->GetElementsByName(str.substr(0,iLenStr-iNumDig).c_str());
+        int iNr = str.mid(iLenStr-iNumDig).toInt() -1;
+        vH = hCurrentNode->GetElementsByName(str.mid(0,iLenStr-iNumDig));
 
         if (vH.size() > 1 && (int)vH.size() > iNr)
             hCurrentNode = vH[iNr];
         else
         {
-            std::cout << "Path: " << hCurrentNode->GetCurrentPath() << std::endl;
-            std::cout << str << " not found" << std::endl;
+            qInfo() << "Path: " << hCurrentNode->GetCurrentPath();
+            qInfo() << str << " not found";
             return false;
         }
     }
     else
     {
-        std::cout << "Path: " << hCurrentNode->GetCurrentPath() << std::endl;
+        qInfo() << "Path: " << hCurrentNode->GetCurrentPath();
         List();
-        std::cout << "Enter number 1 .. " << vH.size() << std::endl;
+        qInfo() << "Enter number 1 .. " << vH.size();
         int i;
-        std::cin >> i;
+        QTextStream(stdin) >> i;
         hCurrentNode = vH[i-1];
-
     }
 
     if (bList)
     {
-        cout << "Current Dir: " << hCurrentNode->GetCurrentPath() << endl;
+        qInfo() << "Current Dir: " << hCurrentNode->GetCurrentPath();
         hCurrentNode->List();
     }
     return true;
 }
 
-bool html::cdTotalDir(std::string sDir)
+bool html::cdTotalDir(QString sDir)
 {
     bool bOK = true;
-    if (sDir.empty()) return false;
+    if (sDir.isEmpty()) return false;
     if(sDir[0] != '/') return false;
 
     if (sDir.size()== 1)
@@ -504,24 +502,24 @@ bool html::cdTotalDir(std::string sDir)
         return true;
     }
     hCurrentNode = &hnEntryNode;
-    sDir = sDir.substr(1);
+    sDir = sDir.mid(1);
 
-    std::vector<std::string> vSubDirs;
+    QVector<QString> vSubDirs;
 
-    size_t fPos;
-    while ((fPos = sDir.find('/')) != std::string::npos && bOK)
+    int fPos;
+    while ((fPos = sDir.indexOf('/')) != -1 && bOK)
     {
         //vSubDirs.push_back(sDir.substr(0,fPos));
-        bOK = cdDown(sDir.substr(0,fPos),false);
+        bOK = cdDown(sDir.mid(0,fPos),false);
 
         if (!bOK)
         {
-            cout << "could not find " << sDir.substr(0,fPos) << endl;
+            qInfo() << "could not find " << sDir.mid(0,fPos);
             PrintChildNodes(*hCurrentNode,false);
             return false;
         }
 
-        sDir.erase(0,fPos+1);
+        sDir.remove(0,fPos+1);
     }
     if (bOK) bOK = cdDown(sDir,false);
 

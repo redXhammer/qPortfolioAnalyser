@@ -25,7 +25,7 @@ QTextStream& operator<< (QTextStream& stream, const QMap<KK, TT> &map)
     typename QMap<KK, TT>::const_iterator it;
     for (it = map.begin(); it != map.end(); it++)
     {
-        stream << it.key() << it.value() << Qt::endl;
+        stream << it.key() << it.value() << endl;
     }
     return stream;
 }
@@ -80,7 +80,8 @@ bool DataFile::open(const QString& cFileOpen)
     qInfo() << "Try to open " << cFileOpen;
 #endif
     pFile.setFileName(cFileOpen);
-    if (!pFile.open(QIODevice::ReadOnly))	{	// Öffnen gescheitert? Laden überspringen
+    if (!pFile.open(QIODevice::ReadOnly))
+    {
         qInfo() << "It failed to load \"" << cFileOpen << "\"";
         return false;
     } else {
@@ -142,12 +143,6 @@ QString DataFile::GetData(ITdblMAP itDataClass, const QString &cName)
     }
     return "";
 }
-
-QList<KursUndDatum> &DataFile::CreateVect(const char* cDataClass,const  char* cName)
-{
-    return mVect[cDataClass][cName];
-}
-
 
 QList<KursUndDatum> &DataFile::GetVect(const char* cDataClass, const char* cName)
 {

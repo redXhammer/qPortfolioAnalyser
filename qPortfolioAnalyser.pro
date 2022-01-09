@@ -21,6 +21,7 @@ SOURCES += \
     fond.cpp \
     html.cpp \
     http.cpp \
+    kursunddatum.cpp \
     main.cpp \
     mainwindow.cpp \
     polynom.cpp
@@ -31,6 +32,7 @@ HEADERS += \
     fond.h \
     html.h \
     http.h \
+    kursunddatum.h \
     mainwindow.h \
     polynom.h
 

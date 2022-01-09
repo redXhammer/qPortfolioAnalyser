@@ -3,6 +3,7 @@
 
 #include <QVector>
 #include <QString>
+#include <QTextStream>
 
 class HtmlNode
 {
@@ -17,7 +18,7 @@ public:
     QString sName;
     QVector<QString> vectHtmlParams;
 
-    QVector<HtmlNode*> GetElementsByName(QString);
+    QVector<HtmlNode*> GetElementsByName(const QString &);
     bool CheckSubNodes();
     bool List();
     HtmlNode* GetSubNode(QString);
@@ -46,6 +47,37 @@ class html //: public http
     int PrintChildNodes (bool bOptions = false){return PrintChildNodes(*hCurrentNode, bOptions);};
 
 
+};
+
+class MyTextStream : public QTextStream {
+public:
+  MyTextStream(FILE *fileHandle)        : QTextStream(fileHandle) {}
+  MyTextStream(QString *string)         : QTextStream(string) {}
+  MyTextStream(QByteArray *array)       : QTextStream(array) {}
+  MyTextStream(const QByteArray &array) : QTextStream(array) {}
+
+  QString readUntil(const QChar &sep)
+  {
+    QChar ch;
+    QString str;
+    while (!atEnd()) {
+      QTextStream::operator >>(ch);
+      if (ch == sep) {
+        break;
+      }
+      str += ch;
+    }
+    return str;
+  }
+
+  void putback(const QChar &chr)
+  {
+    seek(-1);
+    QTextStream::operator<<(chr);
+    seek(-1);
+  }
+private:
+  QString backputchars;
 };
 
 #endif // HTML_H

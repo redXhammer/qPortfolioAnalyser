@@ -1,7 +1,7 @@
 #define FondFile
 #include "fond.h"
 
-
+#include <QTextStream>
 
 #define MAXBUFSIZE 100000
 #define MAXBUFCOUNT MAXBUFSIZE / 13
@@ -69,19 +69,19 @@ bool fond::LoadAllData()
 
 int fond::LoadFondKurse()
 {
-    KursUndDatum kudHelp;
+  KursUndDatum kudHelp;
 
-    QList<KursUndDatum> vKurse = WknFile.GetVect("Fond","Kurse");
-	if (vKurse.size() == 0)
-	{
-        qInfo() << "No File Opened";
-		DownloadFondData();
-        qInfo() << "Speichern : " << SaveFondData() << " Einträge";
+  QList<KursUndDatum> vKurse = WknFile.GetVect("Fond","Kurse");
+  if (vKurse.size() == 0)
+  {
+    qInfo() << "No File Opened";
+    DownloadFondData();
+    qInfo() << "Speichern : " << SaveFondData() << " Einträge";
 
-        iKUD = 0;
-        iStatus = 0;
-		return dqKUD.size();
-	}
+    iKUD = 0;
+    iStatus = 0;
+    return dqKUD.size();
+  }
 
     kudHelp = vKurse.at(0);
 
@@ -222,35 +222,26 @@ QList<KursUndDatum> fond::DownloadFondAuss()
 
 int fond::SaveFondData()
 {
-	int iSaveCount = 0;
-	//std::fstream oFile(sWknFileName.c_str(),ios::out);		// Speichern der Daten
-    VectorStream vsStream(&WknFile.GetVect("Fond","Kurse"),200);
-    vsStream.ClearVect();
-	std::ostream osSave(&vsStream);
-	//osSave.rdbuf(&tvsStream);
+  int iSaveCount = 0;
+  //std::fstream oFile(sWknFileName.c_str(),ios::out);		// Speichern der Daten
+  QList<KursUndDatum> &lkudOldVect = WknFile.GetVect("Fond","Kurse");
 
-
-
-	if(!osSave.good()) {
-        qInfo() << "fond::SaveFondData--Kann nicht schreiben-" << sWknFileName;
-	}else{
-
-        QList<KursUndDatum>::iterator vIt(dqKUD.begin());  // Iterator am Anfang des Vektors
-		for (;vIt != dqKUD.end(); vIt++)
-		{
-            if ((*vIt).cDatum.isValid())
-                osSave << *vIt ;
-
-			osSave.flush();
-			iSaveCount++;
-		}
-        WknFile.AddData("Fond","LastUpdate",iDateToday.toString());
-        WknFile.save(sWknFileName);
+  QList<KursUndDatum>::iterator vIt(dqKUD.begin());  // Iterator am Anfang des Vektors
+  for (;vIt != dqKUD.end(); vIt++)
+  {
+    if ((*vIt).cDatum.isValid())
+    {
+      lkudOldVect.append(*vIt) ;
+      iSaveCount++;
+    }
+  }
+  WknFile.AddData("Fond","LastUpdate",iDateToday.toString());
+  WknFile.save(sWknFileName);
 #ifndef LOWOUTPUT
-        qInfo() << "geschrieben";
+  qInfo() << "geschrieben";
 #endif
-	}
-	return iSaveCount;
+
+  return iSaveCount;
 }
 
 
@@ -329,7 +320,7 @@ int fond::DownloadFondData(QDate cdMax) {
 
 	while(cHttp.GetFondData(kudKursUndDatum) == 0)
 	{
-			if ((cdMax.iDatum >= kudKursUndDatum.cDatum.iDatum) && (cdMax.iDatum != 0))
+      if (cdMax.isValid() && (cdMax >= kudKursUndDatum.cDatum))
 			{
 				break;
 			}
@@ -357,37 +348,33 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
 		cout << ", Enddatum: " << DEnd << endl;
 #endif
 
-	std::string cUrl = "/quote/historic/historic.csv?secu=";
-	cUrl += cSecu;
-	cUrl += "&boerse_id=";
-	std::ostringstream ssOut;
-    ssOut << iBoerseID;
-	cUrl += ssOut.str();
-	if (DStart.iDatum)
+  QString cUrl;
+  QTextStream ssUrl(&cUrl);
+
+  ssUrl << "/quote/historic/historic.csv?secu=" << cSecu;
+
+  ssUrl << "&boerse_id=" << iBoerseID;
+
+  if (DStart.isValid())
 	{
-		cUrl += "&min_time=";
-		cUrl << DStart;
-	} else {
-	    cUrl += "&min_time=";
-	    Datum dH = StrToDate("01.01.1990");
-		cUrl << dH ;
-	}
-	cUrl += "&max_time=";
-	cUrl << DEnd;
-	cUrl +="&clean_split=";
-	if (bClean_Split) cUrl += "1"; else cUrl += "0";
-	cUrl +="&clean_payout=";
-	if (bClean_Payout) cUrl += "1"; else cUrl += "0";
-	cUrl +="&clean_bezug=";
-	if (bClean_Bezug) cUrl += "1"; else cUrl += "0";
-	cUrl +="&trenner=%3B&go=Download";
+    ssUrl << "&min_time=" << DStart.toString();
+  } else {
+    QDate dH = StrToDate("01.01.1990");
+    ssUrl << "&min_time=" << dH.toString();
+  }
+
+  ssUrl << "&max_time=" << DEnd.toString();
+  ssUrl << "&clean_split=" << (bClean_Split?"1":"0");
+  ssUrl << "&clean_payout=" << (bClean_Payout?"1":"0");
+  ssUrl << "&clean_bezug=" << (bClean_Bezug?"1":"0");
+  ssUrl << "&trenner=%3B&go=Download";
 
 #ifndef LOWOUTPUT
     cout << "Connecting with " << cAddr << endl;
 #endif
-	if (cHttp.verbinden((char*)cHttp.cAddr.c_str(),80) != 0) return -1;
+  if (cHttp.verbinden(cHttp.cAddr,80) != 0) return -1;
 
-    if (cHttp.SendGetRequest(cUrl.c_str()) == false) return - 1;
+    if (cHttp.SendGetRequest(cUrl) == false) return - 1;
 
 
 
@@ -403,14 +390,14 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
 	{
 		cHttp.ssFondData << cHttp.sHttpData;
 	}
-	cHttp.sHttpData.erase();
+  cHttp.sHttpData.clear();
 
 	return 0;
 }
 
 
 
-double fond::GetCurrentWert(const Datum& cDatum)
+double fond::GetCurrentWert(const QDate& cDatum)
 {
     //cout << "double fond::GetCurrentWert" << endl;
     int iCountStep = 0;
@@ -459,7 +446,7 @@ double fond::GetCurrentWert(const Datum& cDatum)
 	return dqKUD[iKUD+1].iKurs;
 }
 
-double fond::GetAussFactor(const Datum& cDat)
+double fond::GetAussFactor(const QDate& cDat)
 {
     //cout << "double fond::GetAussFactor" << endl;
     if (iStatus == 1) if (LoadAllData() == false) return 0;
@@ -498,16 +485,16 @@ double fond::GetAussFactor(const Datum& cDat)
 	return itAussLow->iKurs;
 }
 
-double fond::GetTotalWert(const Datum &cDatum)
+double fond::GetTotalWert(const QDate &cDatum)
 {
-	return GetCurrentWert(cDatum) / GetAussFactor(cDatum-1);
+  return GetCurrentWert(cDatum) / GetAussFactor(cDatum.addDays(-1));
 }
 
 double fond::GetCurrentAverage(const QDate &cDatum, int iTage)
 {
     double dSum = 0;
-    for (Datum dDat = cDatum - iTage; dDat < cDatum; dDat++)
-        dSum += GetTotalWert(dDat);
+    for (int iDat = -iTage; iDat < 0; iDat++)
+        dSum += GetTotalWert(cDatum.addDays(iDat));
 
     dSum /= iTage;
 
@@ -517,14 +504,15 @@ double fond::GetCurrentAverage(const QDate &cDatum, int iTage)
 
 void fond::DownloadFundamental()
 {
-    std::string cUrl =  "http://www.ariva.de";
-	cUrl += STsURL;
-	cUrl += "/bilanz-guv";
+    QString cUrl =  "http://www.ariva.de";
+    cUrl += STsURL;
+    cUrl += "/bilanz-guv";
 
     html hSite;
-    hSite.open(cUrl.c_str());
+    hSite.open(cUrl);
 
     hSite.cdTotalDir("/html/body/div3/div2/div8");
+
     /*std::vector<HtmlNode*> vhnDiv = hSite.hCurrentNode->GetElementsByName("div");
     std::vector<HtmlNode*>::iterator itDiv;
 
@@ -542,8 +530,8 @@ void fond::DownloadFundamental()
 
     }*/
 
-    std::vector<HtmlNode*> vhnDiv = hSite.hCurrentNode->GetElementsByName("table");
-    std::vector<HtmlNode*>::iterator itDiv;
+    QVector<HtmlNode*> vhnDiv = hSite.hCurrentNode->GetElementsByName("table");
+    //QVector<HtmlNode*>::iterator itDiv;
     if (vhnDiv.size() < 6) return;
     hSite.cdDown("table6",false);
     vhnDiv = hSite.hCurrentNode->GetElementsByName("tr");
@@ -553,19 +541,12 @@ void fond::DownloadFundamental()
     if (vhnDiv.size() < 6) return;
     hSite.cdDown("td6",false);
     if (hSite.hCurrentNode->vectHtmlChildNode.size() == 0) return;
-    std::string sPers = hSite.hCurrentNode->vectHtmlChildNode[0]->sName;
-    boost::algorithm::erase_all(sPers,".");
-    cout << atoi(sPers.c_str()) << endl;
+    QString sPers = hSite.hCurrentNode->vectHtmlChildNode[0]->sName;
+    sPers = sPers.remove(".");
+    //boost::algorithm::erase_all(sPers,);
+    qInfo() << sPers.toInt();
 
-    STiPers =  atoi(sPers.c_str());
-
-
-
-
-
-
-
-
+    STiPers =  sPers.toInt();
 }
 
 
@@ -578,117 +559,19 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
 	cUrl += cSearch;
 
     html hSite;
-    hSite.open(cUrl.c_str());
+    hSite.open(cUrl);
 
     // Secu
     if (hSite.cdTotalDir("/div/input1") == false) return false;
-    std::string sHelp =  hSite.hCurrentNode->vectHtmlParams[2];
-    sSecu = sHelp.substr(7,sHelp.size() - 8);
+    QString sHelp = hSite.hCurrentNode->vectHtmlParams[2];
+    sSecu = sHelp.mid(7,sHelp.size() - 8);
 
     //Url
     if (hSite.cdTotalDir("/div/table/tr/td1/a") == false) return false;
     sHelp =  hSite.hCurrentNode->vectHtmlParams[0];
-    sURL = sHelp.substr(6,sHelp.size()-7);
+    sURL = sHelp.mid(6,sHelp.size()-7);
 
 	return true;
 }
 
 
-
-
-
-
-
-/** @brief (one liner)
-  *
-  * (documentation goes here)
-  */
- VectorStream::VectorStream(std::list<std::string>* pV,int iBuffersize)
-{
-    pVect = pV;
-    itVect = pVect->begin();
-    iBufSize = iBuffersize;
-#ifndef NOOUTPUT
-    qInfo() << "Opening Vectorstream with Initial " << pV->size() << " Elements";
-#endif
-    if (iBuffersize)
-    {
-            pOutput = new char[iBuffersize];
-            setp(pOutput, pOutput + iBuffersize);
-            pInput = new char[iBuffersize];
-            setg(pInput,pInput,pInput);
-    }
-    else
-    {
-            pOutput = NULL;
-            pInput = NULL;
-            setp(0, 0);
-            setg(0, 0, 0);
-    }
-
-
-
-}
-
-/** @brief (one liner)
-  *
-  * (documentation goes here)
-  */
- VectorStream::~VectorStream()
-{
-sync();
-
-    if (pOutput)
-        delete pOutput;
-    if (pInput)
-        delete pInput;
-
-}
-
-/** @brief (one liner)
-  *
-  * (documentation goes here)
-  */
-int VectorStream::sync()
-{
-
-    if (pbase() != pptr())
-    {
-        DWORD dwCharsToWrite = pptr() - pbase();
-        pOutput[dwCharsToWrite] = 0;
-        pVect->push_back(pOutput);
-        //cout << pReserve;
-        setp(pbase(), epptr());
-    }
-    return 0;
-}
-
-/** @brief (one liner)
-  *
-  * (documentation goes here)
-  */
-int VectorStream::underflow()
-{
-    if (!(itVect!=pVect->end())) return EOF;
-    int iBytesToCopy = itVect->size();
-    if (iBytesToCopy>iBufSize) cout << "Error! Buffersize " << iBufSize << " Bytes To Copy " << iBytesToCopy << endl;
-    memcpy(pInput,itVect->c_str(),iBytesToCopy);
-    pInput[iBytesToCopy++] = '\n';
-    pInput[iBytesToCopy] = 0;
-    setg(pInput,pInput,pInput+iBytesToCopy);
-    itVect++;
-    return 0;
-}
-
-
-
-
-/** @brief (one liner)
-  *
-  * (documentation goes here)
-  */
-int VectorStream::overflow(int_type)
-{
-    cout << "Overflow" << endl;
-    return 0;
-}

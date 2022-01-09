@@ -10,6 +10,8 @@
 
 #define NOOUTPUT
 
+#define MAXINT32 0x7FFFFFFF
+
 TransActAnt::TransActAnt() :
     cDatum(),iAnteile(0), iType(2)
 {}
@@ -47,7 +49,7 @@ Depot::Depot() :
 }
 
 Depot::Depot(const Depot& A) :
-    std::list<DepotPos*> (A)
+    QList<DepotPos*> (A)
 {
     *this = A;
     qInfo() << "Copying Depotset " << (long long)this;
@@ -72,86 +74,86 @@ bool Depot::LoadDepotFile (const char * cFile)
 
     QFile fsDepotFile(cFile);
     //QString sDepotData,sDepotData2;
-	DepotPos* pcDepot;
+    DepotPos* pcDepot;
     cDateBegin = QDate();
 
     if (!fsDepotFile.open(QIODevice::ReadOnly /* | QIODevice::Text */ ))
-	{
+    {
         qWarning() << "DepotFile" << cFile << "could not being opend Opened";
         return false;
-	}
+    }
 
     while(!fsDepotFile.atEnd())
-	{
+    {
         QByteArray sDepotData = fsDepotFile.readLine();
 
         if (sDepotData.size() > 3) {
             if (sDepotData[2] == ':'){
                 pcDepot = GetDepotClass(sDepotData);
-				push_back(pcDepot);
+                push_back(pcDepot);
 
-			} else {
-				int iType = 0;
+            } else {
+                int iType = 0;
                 if (sDepotData[0] == '*')
-				{
-					iType = 1;
+                {
+                    iType = 1;
                     sDepotData.remove(0,1);
-				}
+                }
 
                 size_t iPos;
                 if ((iPos = sDepotData.lastIndexOf("St")) != -1)
-				{
-				    iType = 3;
+                {
+                    iType = 3;
                     sDepotData.remove(iPos,MAXINT32);
-				}
+                }
 
                 QByteArray sDepotData2 = sDepotData;
                 sDepotData2.remove(0,8);
                 sDepotData.remove(9,MAXINT32);
-				if(pcDepot != 0)
-				{
+                if(pcDepot != 0)
+                {
                     QDate dT = QDate::fromString(sDepotData,QString("dd.MM.yy"));
                     bool bOK;
                     double val = sDepotData2.toFloat(&bOK);
                     if (!bOK)
                     {
-                        qWarning() << "Did not correctly process line"
+                        qWarning() << "Did not correctly process line";
                         continue;
                     }
                     if ((!cDateBegin.isValid()) || (cDateBegin > dT))
-				    {
+                    {
                         cDateBegin = dT;
-				    }
+                    }
 
-					if (iType==1) { // Wiederanlage (keinGrundbestand)
-                        pcDepot->AddGewinn(dT,atof());
-					}else if (iType==0){ // Neuanlage (Grundbestand)
-						pcDepot->AddTransAction(dT,atof(sDepotData2.c_str()));
-					}else if (iType==3){ // Neuanlage (Stück)
-						pcDepot->AddItem(dT,atof(sDepotData2.c_str()));
-					}
-				} else {
+                    if (iType==1) { // Wiederanlage (keinGrundbestand)
+                        pcDepot->AddGewinn(dT,val);
+                    }else if (iType==0){ // Neuanlage (Grundbestand)
+                        pcDepot->AddTransAction(dT,val);
+                    }else if (iType==3){ // Neuanlage (Stück)
+                        pcDepot->AddItem(dT,val);
+                    }
+                } else {
                     qInfo() << "No Depot Defined" ;
-				}
-			}
-		}
-	}
-#ifndef _CONSOLE
-	std::deque<wndcre*>::iterator itHwnd;
-	for (itHwnd = dqWindows.begin(); itHwnd != dqWindows.end() ;itHwnd++)
-	{
-	    (*itHwnd)->ReloadData();
-		cout << "Redrawing: " << (*itHwnd)->UpdateWindow() << endl;
+                }
+            }
+        }
+    }
+#if 0 //ndef _CONSOLE
+    QList<wndcre*>::iterator itHwnd;
+    for (itHwnd = dqWindows.begin(); itHwnd != dqWindows.end() ;itHwnd++)
+    {
+        (*itHwnd)->ReloadData();
+        cout << "Redrawing: " << (*itHwnd)->UpdateWindow() << endl;
 
-	}
+    }
 #endif
     //sName = cFile;
-	return true;
+    return true;
 }
 
 DepotPos* Depot::operator [] (const int &iAt)
 {
-    std::list<DepotPos*>::iterator itList = begin();
+    QList<DepotPos*>::iterator itList = begin();
     for (;itList != end();itList++)
     {
         if ((*itList)->iDepotNr == iAt) return *itList;
@@ -161,7 +163,7 @@ DepotPos* Depot::operator [] (const int &iAt)
 
 void Depot::Delete (const int &iAt)
 {
-    std::list<DepotPos*>::iterator itList = begin();
+    QList<DepotPos*>::iterator itList = begin();
     for (;itList != end();itList++)
     {
         if ((*itList)->iDepotNr == iAt)
@@ -185,7 +187,7 @@ QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
 
     streamText << '|' << qSetFieldWidth( 10 ) << "DepotPos" <<'|' << qSetFieldWidth( 10 ) << "Anteile" <<'|' << qSetFieldWidth( 10 ) << "Wert"  <<'|' <<
         qSetFieldWidth( 10 ) << "+- Monat"  <<'|' << "+- Gesamt"  <<'|' << " Zins " << '|' ;
-	std::list<DepotPos*>::const_iterator idDepot;
+        QList<DepotPos*>::const_iterator idDepot;
 	for (idDepot = begin(); idDepot != end();idDepot++)
 	{
 		dWertGesammt += (*idDepot)->GetCurrentDepotWert(cDateOfW);
@@ -212,11 +214,11 @@ QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
 
 
 
-double Depot::GetDepotSetWert(const Datum &cDat)
+double Depot::GetDepotSetWert(const QDate &cDat)
 {
 	//int iDat;
 	double dMaxDWert = 0;
-	std::list<DepotPos*>::const_iterator itDepot = begin();
+        QList<DepotPos*>::const_iterator itDepot = begin();
 	for (; itDepot != end();itDepot++)
 	{
 		dMaxDWert += (*itDepot)->GetCurrentDepotWert(cDat);
@@ -228,7 +230,7 @@ double Depot::GetDepotSetWert(const Datum &cDat)
 
 
 
-double Depot::CalculateZins(const Datum& cdDatLow,const Datum &cdDatHigh)
+double Depot::CalculateZins(const QDate& cdDatLow,const QDate &cdDatHigh)
 {
 /* Berechne: GesammtZins
 
@@ -236,12 +238,12 @@ double Depot::CalculateZins(const Datum& cdDatLow,const Datum &cdDatHigh)
 	if (size() < 1) return 0;
 
 	polynom pPolyGes;
-	std::list<DepotPos*>::iterator itDepot;
+        QList<DepotPos*>::iterator itDepot;
 
 
 	for (itDepot = begin(); itDepot != end(); itDepot ++)
 	{
-		std::deque<TransActAnt>::iterator itTAA;
+                QList<TransActAnt>::iterator itTAA;
 		PolynomElement peElement;
 #ifdef _console
 		cout << "Size: " << dDepot.size() << endl;
@@ -261,14 +263,14 @@ double Depot::CalculateZins(const Datum& cdDatLow,const Datum &cdDatHigh)
 			}
 			peElement.coefficient = (itTAA->iAnteile - dOldAnt) * (*itDepot)->GetCurrentFondWert(itTAA->cDatum);
 
-			peElement.exponent = cdDatHigh - itTAA->cDatum;
+                        peElement.exponent = itTAA->cDatum.daysTo(cdDatHigh); //cdDatHigh - itTAA->cDatum;
 			pPolyGes.push_back(peElement);
 		}
 		peElement.coefficient = (*itDepot)->GetCurrentDepotWert (cdDatHigh) * (-1);
 		peElement.exponent = 0;
 		pPolyGes.push_back(peElement);
 		peElement.coefficient = (*itDepot)->GetCurrentDepotWert (cdDatLow);
-		peElement.exponent = cdDatHigh-cdDatLow;
+                peElement.exponent = cdDatLow.daysTo(cdDatHigh);
 		pPolyGes.push_back(peElement);
 
 	}
@@ -286,13 +288,13 @@ double Depot::GetMaxDepotSetWert(QDate& cdDatLow, QDate& cdDatHigh)
 
 	cdStart = cdDatLow; cdEnd = cdDatHigh;
 
-	Datum cHelp = cdDatLow;
+        QDate cHelp = cdDatLow;
 	double dMaxDSWert = 0;
 	double dCurentDSWert;
 
-	for (; cHelp <= cdDatHigh ;cHelp++)
+        for (; cHelp <= cdDatHigh ;cHelp=cHelp.addDays(1))
 	{
-		dCurentDSWert = GetDepotSetWert(cHelp);
+                dCurentDSWert = GetDepotSetWert(cHelp);
 		if (dMaxDSWert < dCurentDSWert) dMaxDSWert = dCurentDSWert;
 	}
 	dCurrentMaxDepotSetWert = dMaxDSWert;
@@ -312,10 +314,10 @@ void Depot::ClearDepots()
     clear();
 }
 
-double Depot::GetCurrentDSTrend(const Datum &DStart, const Datum &DEnd)
+double Depot::GetCurrentDSTrend(const QDate &DStart, const QDate &DEnd)
 {
 	double dTrend = 0;
-	std::list<DepotPos*>::const_iterator itDepot = begin();
+        QList<DepotPos*>::const_iterator itDepot = begin();
 	for (; itDepot != end();itDepot++)
 	{
 		dTrend += (*itDepot)->GetCurrentTrend(DStart,DEnd);
@@ -341,39 +343,39 @@ bool Depot::AddDepot (DepotPos *pdAdd)
   *
   * (documentation goes here)
   */
-bool Depot::MakeAllSavingsPlan(double dValPerPeriod, Datum dStart , Datum dEnd, int iPeriod)
+bool Depot::MakeAllSavingsPlan(double dValPerPeriod, QDate dStart , QDate dEnd, int iPeriod)
 {
     if (size() <= 0) return false;
     dValPerPeriod /= size();
-    std::list<DepotPos*>::iterator itDepot;
-    if (dStart == STARTATEARLIEST)
+    QList<DepotPos*>::iterator itDepot;
+    if (dStart.isNull())
         for (itDepot = begin();itDepot != end();itDepot++)
             if (dStart < (*itDepot)->pFond->dqKUD.back().cDatum)
                 dStart = (*itDepot)->pFond->dqKUD.back().cDatum;
 
-    cout << dStart << " and setting StartDate to ";
+
     if (iPeriod < 0)
     {
         switch (iPeriod)
         {
         case EVERYDAY:
-            cout << "Not Implemented Yet" << endl;
+            qWarning() << "Not Implemented Yet" << endl;
             break;
         case EVERYWEEK:
-            cout << "Not Implemented Yet" << endl;
+            qWarning() << "Not Implemented Yet" << endl;
             break;
         case EVERYMONTH:
-            while (dStart.Day() != 1){ dStart++;}
+            while (dStart.day() != 1){ dStart = dStart.addDays(1);}
             break;
         case EVERYYEAR:
-            cout << "Not Implemented Yet" << endl;
+            qWarning() << "Not Implemented Yet" << endl;
             break;
         }
-        cout << dStart << endl;
+        qInfo() << "Setting StartDate to " << dStart;
 
-        if (dEnd == STOPATLAST) dEnd = iDateToday;
+        if (dEnd.isNull()) dEnd = QDate::currentDate();
         cDateBegin = dStart;
-        for (;dStart < dEnd; dStart+=30)
+        for (;dStart < dEnd; dStart = dStart.addDays(30))
         {
             for (itDepot = begin();itDepot != end();itDepot++)
                 (*itDepot)->AddTransAction(dStart,dValPerPeriod);
@@ -386,7 +388,7 @@ bool Depot::MakeAllSavingsPlan(double dValPerPeriod, Datum dStart , Datum dEnd, 
     return true;
 }
 
-void Depot::MakeAutomaticTransaction(const Datum & dDate, double &dBargeld, double * pEinzahlung, double *pAuszahlung, std::ostream * pOS )
+void Depot::MakeAutomaticTransaction(const QDate & dDate, double &dBargeld, double * pEinzahlung, double *pAuszahlung, QTextStream * pOS )
 {
     /*if (pOS) *pOS << "Transaktionen am " << dDate
             << ")\tBargeld, Beginn:" << dBargeld
@@ -394,7 +396,7 @@ void Depot::MakeAutomaticTransaction(const Datum & dDate, double &dBargeld, doub
             << endl << "Verkaufsorders:" << endl;
 
 
-    std::list<DepotPos*>::iterator itDeotPos;
+    QList<DepotPos*>::iterator itDeotPos;
     for (itDeotPos = begin(); itDeotPos != end(); itDeotPos++)
     {
         DepotPos * pDepPos = *itDeotPos;
@@ -473,7 +475,7 @@ void Depot::MakeAutomaticTransaction(const Datum & dDate, double &dBargeld, doub
             << "\tWP: " << GetDepotSetWert(dDate)
             << endl << "Kaufsorders:" << endl;
 
-    std::list<DepotPos*>::iterator itDeotPos;
+    QList<DepotPos*>::iterator itDeotPos;
     double dBar = dBargeld;
     for (itDeotPos = begin(); itDeotPos != end(); itDeotPos++)
     {
@@ -491,7 +493,7 @@ void Depot::MakeAutomaticTransaction(const Datum & dDate, double &dBargeld, doub
 
 void Depot::DeleteAllTransactions()
 {
-    std::list<DepotPos*>::iterator itDepotPos;
+    QList<DepotPos*>::iterator itDepotPos;
 
     for (itDepotPos = begin(); itDepotPos!= end(); itDepotPos++)
     {

@@ -8,10 +8,12 @@
 #include <QTextStream>
 #include <QDate>
 
+#include "kursunddatum.h"
 
-typedef QMap<QString , QMap<QString,QString> >::iterator ITdblMAP;
-typedef QMap<QString , QMap<QString,QString> >           DBLmap;
-typedef QMap<QString,QString>::iterator                  ITmap;
+
+typedef QMap<QString, QMap<QString,QString> >::iterator ITdblMAP;
+typedef QMap<QString, QMap<QString,QString> >           DBLmap;
+typedef QMap<QString, QString>::iterator                  ITmap;
 
 class DataFile
 {
@@ -45,7 +47,6 @@ public:
     QString GetData(ITdblMAP itDataClass, const QString& cName);
 
 // mVect zugriff
-    QList<KursUndDatum>& CreateVect (const char* cDataClass,const  char* cName);
     QList<KursUndDatum>& GetVect (const char* cDataClass, const char* cName);
 
     QMap<QString , QMap<QString,QString> >::iterator

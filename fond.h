@@ -111,27 +111,6 @@ protected:
 
 
 
-class VectorStream : public std::streambuf
-{
-public:
-        VectorStream(std::list<std::string>* pV,int iBuffersize=100);
-        virtual ~VectorStream();
-        bool ClearVect() {pVect->clear(); return true;}
-
-private:
-        char* pOutput;
-        char* pInput;
-        std::list<std::string>* pVect;
-        std::list<std::string>::iterator itVect;
-        int iBufSize;
-protected:
-        int_type overflow(int_type);
-        int_type underflow();
-        int_type sync();
-};
-
-
-
 //void* GetFondClass(char*);
 //void DeleteFonds() ;
 
