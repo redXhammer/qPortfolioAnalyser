@@ -16,7 +16,7 @@ http::http()
     ssFondData.setString(&strFondData);
     cAddr = "www.ariva.de";
 #ifndef LOWOUTPUT
-    //cout << "Creating http with Host: " << cAddr << endl;
+    //qInfo() << "Creating http with Host: " << cAddr << endl;
 #endif
     return;
 }
@@ -24,7 +24,7 @@ http::http()
 http::http(const QString &cAddr2) {
 		cAddr = cAddr2;
 #ifndef LOWOUTPUT
-    //cout << "Creating http with Host: "  << cAddr << endl;
+    //qInfo() << "Creating http with Host: "  << cAddr << endl;
 #endif
 	return;
 }
@@ -33,7 +33,7 @@ int http::DeleteFrom(const QString &cSearch, bool bAlwaysDO)
 {
     int iReturnVal = 0;
 #ifndef LOWOUTPUT
-	cout << "Finding " << cSearch << " : " ;
+  qInfo() << "Finding " << cSearch << " : " ;
 #endif
     int iEndA = sHttpData.indexOf(cSearch);
     if (iEndA == -1)  {
@@ -58,12 +58,12 @@ int http::DeleteFrom(const QString &cSearch, bool bAlwaysDO)
         iReturnVal = -1;
 	} else {
 #ifndef LOWOUTPUT
-	cout << iEndA << endl;
-	cout << "erasing" << endl;
+  qInfo() << iEndA << endl;
+  qInfo() << "erasing" << endl;
 #endif
     sHttpData.remove(iEndA);  // Add end ??
 #ifndef LOWOUTPUT
-	cout << "Erased: "<< sHttpData.length() << endl;
+  qInfo() << "Erased: "<< sHttpData.length() << endl;
 #endif
 	}
     #if defined (_DEBUG) && defined (_CONSOLE) && defined (ANALYSINGHTTPRESPONSE)
@@ -84,7 +84,7 @@ int http::DeleteUntil(const QString &cSearch, bool bAlwaysDO)
 {
     int iReturnVal = 0;
 #ifndef LOWOUTPUT
-	cout << "Finding " << cSearch << " : " ;
+  qInfo() << "Finding " << cSearch << " : " ;
 #endif
     int iStartA = sHttpData.indexOf(cSearch)  ;
     if (iStartA == -1) {
@@ -93,7 +93,7 @@ int http::DeleteUntil(const QString &cSearch, bool bAlwaysDO)
 #if defined (_DEBUG) && defined (_CONSOLE)
             fstream oFile("DeleteFrom.txt",ios::out);
             if(!oFile.good()) {
-                cout << "http::recv--Kann nicht schreiben-" << endl;
+                qInfo() << "http::recv--Kann nicht schreiben-" << endl;
             }
             oFile << sHttpData;
             oFile.close();
@@ -107,18 +107,17 @@ int http::DeleteUntil(const QString &cSearch, bool bAlwaysDO)
 	} else {
     iStartA += cSearch.length();
 #ifndef LOWOUTPUT
-	cout << iStartA;
-	cout << "erasing" << endl;
+  qInfo() << iStartA << "erasing" << endl;
 #endif
     sHttpData.remove(0,iStartA);
 #ifndef LOWOUTPUT
-	cout << "Bytes 2: "<< sHttpData.length() << endl;
+  qInfo() << "Bytes 2: "<< sHttpData.length() << endl;
 #endif
 	}
     #if defined (_DEBUG) && defined (_CONSOLE) && defined (ANALYSINGHTTPRESPONSE)
         fstream oFile("ANALYSINGHTTPRESPONSE.txt",ios::out);
         if(!oFile.good()) {
-            cout << "http::recv--Kann nicht schreiben-" << endl;
+            qInfo() << "http::recv--Kann nicht schreiben-" << endl;
         } else {
         oFile << sHttpData;
         oFile.close();
@@ -140,7 +139,7 @@ int http::ReplaceEverywereEveryThingBetween(const QString &cSearch1, const QStri
     #if defined (_DEBUG) && defined (_CONSOLE) && defined (ANALYSINGHTTPRESPONSE)
         fstream oFile("ANALYSINGHTTPRESPONSE.txt",ios::out);
         if(!oFile.good()) {
-            cout << "http::recv--Kann nicht schreiben-" << endl;
+            qInfo() << "http::recv--Kann nicht schreiben-" << endl;
         } else {
         oFile << sHttpData;
         oFile.close();
@@ -161,7 +160,7 @@ int http::DeleteEverywereEveryThingBetween(const QString &cSearch1, const QStrin
     #if defined (_DEBUG) && defined (_CONSOLE) && defined (ANALYSINGHTTPRESPONSE)
         fstream oFile("ANALYSINGHTTPRESPONSE.txt",ios::out);
         if(!oFile.good()) {
-            cout << "http::recv--Kann nicht schreiben-" << endl;
+            qInfo() << "http::recv--Kann nicht schreiben-" << endl;
         } else {
         oFile << sHttpData;
         oFile.close();
@@ -181,7 +180,7 @@ int http::DeleteEveryThing(const QString &cSearch1)
     #if defined (_DEBUG) && defined (_CONSOLE) && defined (ANALYSINGHTTPRESPONSE)
         fstream oFile("ANALYSINGHTTPRESPONSE.txt",ios::out);
         if(!oFile.good()) {
-            cout << "http::recv--Kann nicht schreiben-" << endl;
+            qInfo() << "http::recv--Kann nicht schreiben-" << endl;
         } else {
         oFile << sHttpData;
         oFile.close();
@@ -201,7 +200,7 @@ int http::ReplaceEveryThing(const QString &cSearch1, const QString &cReplace)
     #if defined (_DEBUG) && defined (_CONSOLE) && defined (ANALYSINGHTTPRESPONSE)
         fstream oFile("ANALYSINGHTTPRESPONSE.txt",ios::out);
         if(!oFile.good()) {
-            cout << "http::recv--Kann nicht schreiben-" << endl;
+            qInfo() << "http::recv--Kann nicht schreiben-" << endl;
         } else {
         oFile << sHttpData;
         oFile.close();
@@ -255,7 +254,7 @@ int http::ClipHttpCommand (const QString &cCommand, const QString &cName)
         int iFoundCommEnd = sHttpData.indexOf(cCommEnd,iFoundCommC2);
         int iCoundNewComm = sHttpData.indexOf(cCommC,iFoundCommC2);
         if (iFoundCommEnd == -1) {qInfo() << "Clip End failed! Could not find " << cCommEnd; return -1;}
-        //if (iCoundNewComm == -1) {cout << "Clip End failed! Could not find " << cCommC << endl; return -1;}
+        //if (iCoundNewComm == -1) {qInfo() << "Clip End failed! Could not find " << cCommC << endl; return -1;}
 
         while ((iFoundCommEnd > iCoundNewComm) && (iCoundNewComm != -1))
         {
@@ -418,9 +417,9 @@ bool http::SendGetRequest(const QString cUrl)
 
 
 #ifndef LOWOUTPUT
-	cout << request << endl;
+  qInfo() << request << endl;
 #endif
-	//cout << cUrl << endl;
+  //qInfo() << cUrl << endl;
   if (!SendAll(request))
     {
         if (0 != verbinden(cAddr,80)) return false;
@@ -452,7 +451,7 @@ bool http::SendPostRequest(const QString cUrl, const QString cPost)
 #ifndef LOWOUTPUT
   qInfo() << request;
 #endif
-  //cout << cUrl << endl;
+  //qInfo() << cUrl << endl;
   if (!SendAll(request))
   {
     if (0 != verbinden(cAddr,80)) return false;
@@ -486,7 +485,7 @@ search=Katzen&go=Artikel
 http::~http()
 {
 #ifndef LOWOUTPUT
-	cout << "Deleting http" << endl;
+  qInfo() << "Deleting http" << endl;
 #endif
 	return;
 }
@@ -531,7 +530,7 @@ int http::recv(QString &sRecvData)
 #if defined (_DEBUG) && defined (_CONSOLE)
     fstream oFile("Http.txt",ios::out | ios::app);
     if(!oFile.good()) {
-        cout << "http::recv--Kann nicht schreiben-" << endl;
+        qInfo() << "http::recv--Kann nicht schreiben-" << endl;
     }
     oFile << sRecvData;
     oFile.close();
@@ -541,8 +540,8 @@ int http::recv(QString &sRecvData)
     //oFileHttpData << sRecvData;
     //oFileHttpData.close();
 #if defined (_DEBUG) && defined (_CONSOLE)
-    if ((int)sRecvData.length() != iLenGes) cout << "Recv Error: sRecvData.length(): " << sRecvData.length() << " und \"iLenGes:\" " << iLenGes << endl;
-    else cout << "Download Complete. Bytes: " << iLenGes << endl;;
+    if ((int)sRecvData.length() != iLenGes) qInfo() << "Recv Error: sRecvData.length(): " << sRecvData.length() << " und \"iLenGes:\" " << iLenGes << endl;
+    else qInfo() << "Download Complete. Bytes: " << iLenGes << endl;;
 #endif
     return iLenGes;
 }
@@ -626,12 +625,14 @@ int http::recv()
             recvSize += bytesRecv;
             http_data += data_shunk;
         }
+
+        qInfo() << "Downloading... " << recvSize << "of" << size;
     }
     else
     {
         if(!chunked)
         {
- //           cout << "Downloading... (Unknown Filesize)" << endl;
+            qInfo() << "Downloading... (Unknown Filesize)" << endl;
             while(bytesRecv != 0) // Wenn recv 0 zurück gibt, wurde die Verbindung beendet
             {
                 QByteArray data_shunk;
@@ -644,7 +645,7 @@ int http::recv()
         }
         else
         {
-//            cout << "Downloading... (Chunked)" << endl;
+            qInfo() << "Downloading... (Chunked)" << endl;
             while(true)
             {
                 QTextStream sstream;
@@ -653,9 +654,10 @@ int http::recv()
                 sstream >> hex >> chunkSize; // Größe des nächsten Parts einlesen
                 if(chunkSize <= 0)
                 {
+                    qInfo() << "Finished:" << chunkSize;
                     break;
                 }
-//                cout << "Downloading Part (" << chunkSize << " Bytes)... " << endl;
+                qInfo() << "Downloading Part (" << chunkSize << " Bytes)... ";
                 recvSize = 0; // Vor jeder Schleife wieder auf 0 setzen
                 while(recvSize < chunkSize)
                 {
@@ -670,7 +672,7 @@ int http::recv()
                     //}
                     recvSize += bytesRecv;
                     http_data += data_shunk;
- //                   cout << "\r" << recvSize * 100 / chunkSize << "%" << flush;
+ //                   qInfo() << "\r" << recvSize * 100 / chunkSize << "%" << flush;
                 }
 //                cout << endl;
                 for(int i = 0; i < 2; ++i)
@@ -681,7 +683,7 @@ int http::recv()
             }
         }
     }
-//    cout << endl << "Finished!" << endl;
+//    qInfo() << endl << "Finished!" << endl;
     sHttpData = QString::fromUtf8(http_data);
 
     //ReplaceEveryThing(">","<|||\r\n");
@@ -690,15 +692,15 @@ int http::recv()
 #if defined (_DEBUG) && defined (_CONSOLE)
 	fstream oFile("Http.txt",ios::out);
 	if(!oFile.good()) {
-	cout << "http::recv--Kann nicht schreiben-" << endl;
+  qInfo() << "http::recv--Kann nicht schreiben-" << endl;
 	}
 	oFile << sHttpData;
 	oFile.close();
 #endif
 
 #if defined (_DEBUG) && defined (_CONSOLE) && !defined (NOOUTPUT)
-	if (sHttpData.length() != iLenGes) cout << "Recv Error: sRecvData.length(): " << sHttpData.length() << " und \"iLenGes:\" " << iLenGes << endl;
-	else cout << "Download Complete. Bytes: " << iLenGes << endl;;
+  if (sHttpData.length() != iLenGes) qInfo() << "Recv Error: sRecvData.length(): " << sHttpData.length() << " und \"iLenGes:\" " << iLenGes << endl;
+  else qInfo() << "Download Complete. Bytes: " << iLenGes << endl;;
 #endif
 	return iLenGes;
 }
