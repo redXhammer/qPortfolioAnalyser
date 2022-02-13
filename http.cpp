@@ -494,63 +494,62 @@ http::~http()
 #define BufSize 1024
 int http::recv(QString &sRecvData)
 {
-  QByteArray cBuf;
-	int iLen = -1;
-	int iLenGes  = -1;
-  iLen = RecvBuf(cBuf);
+    QByteArray cBuf;
+    int iLen = -1;
+    int iLenGes  = -1;
+    iLen = RecvAll(cBuf);
 
-  sHttpData.clear();
-	sHttpData = cBuf;
+    sHttpData.clear();
+    sHttpData = cBuf;
 
-	DeleteUntil("HTTP/1.1 ");
-	DeleteFrom(" ");
+    DeleteUntil("HTTP/1.1 ");
+    DeleteFrom(" ");
 
-  bool bOK;
-  iLastStatusResponse = sHttpData.toInt(&bOK);
-	sHttpData.clear();
+    bool bOK;
+    iLastStatusResponse = sHttpData.toInt(&bOK);
+    sHttpData.clear();
 
-	if (iLen  == -1)
-	{
-		return -1;
-  }
-  else
-  {
-		iLenGes = iLen;
-		while (iLen)
-		{
-			sRecvData += cBuf;
-      iLen = RecvBuf(cBuf);
-			if (iLen == -1) {
-				return -1;
-			}
-			//cBuf[iLen] = 0;
-			iLenGes += iLen;
-		}
-	}
+    if (iLen  == -1)
+    {
+        return -1;
+    }
+    else
+    {
+        iLenGes = iLen;
+        while (iLen)
+        {
+            sRecvData += cBuf;
+            iLen = RecvAll(cBuf);
+            if (iLen == -1) {
+                return -1;
+            }
+            //cBuf[iLen] = 0;
+            iLenGes += iLen;
+        }
+    }
 
 #if defined (_DEBUG) && defined (_CONSOLE)
-	fstream oFile("Http.txt",ios::out | ios::app);
-	if(!oFile.good()) {
-	cout << "http::recv--Kann nicht schreiben-" << endl;
-	}
-	oFile << sRecvData;
-	oFile.close();
+    fstream oFile("Http.txt",ios::out | ios::app);
+    if(!oFile.good()) {
+        cout << "http::recv--Kann nicht schreiben-" << endl;
+    }
+    oFile << sRecvData;
+    oFile.close();
 
 #endif
-	//ofstream oFileHttpData("C:\\Http.txt");
-	//oFileHttpData << sRecvData;
-	//oFileHttpData.close();
+    //ofstream oFileHttpData("C:\\Http.txt");
+    //oFileHttpData << sRecvData;
+    //oFileHttpData.close();
 #if defined (_DEBUG) && defined (_CONSOLE)
-	if ((int)sRecvData.length() != iLenGes) cout << "Recv Error: sRecvData.length(): " << sRecvData.length() << " und \"iLenGes:\" " << iLenGes << endl;
-	else cout << "Download Complete. Bytes: " << iLenGes << endl;;
+    if ((int)sRecvData.length() != iLenGes) cout << "Recv Error: sRecvData.length(): " << sRecvData.length() << " und \"iLenGes:\" " << iLenGes << endl;
+    else cout << "Download Complete. Bytes: " << iLenGes << endl;;
 #endif
-	return iLenGes;
+    return iLenGes;
 }
 
 int http::recv()
 {
-	char cBuf[100];
-	int iLenGes  = -1;
+    int iLenGes  = -1;
     bool chunked = false;
     const int noSizeGiven = -1;
     int size = noSizeGiven;
@@ -573,31 +572,33 @@ int http::recv()
 
     if(code != 200)
     {
-        firstLine.trim(); // Leerzeichen nach dem Statuscode ignorieren
+        //firstLine.trim(); // Leerzeichen nach dem Statuscode ignorieren
         QString msg;
-        getline(firstLine, msg);
+        firstLine >> msg;
         qInfo() << "Error #" << code << " - " << msg << endl;
         return 0;
     }
 
     while(true)
     {
-        stringstream sstream;
+        QTextStream sstream;
         GetLine(sstream);
-        if(sstream.str() == "\r") // Header zu Ende?
+        QString left; // Das was links steht
+        sstream >> left;
+
+        if(left.isEmpty()) // Header zu Ende?
         {
             break;
         }
-        string left; // Das was links steht
-        sstream >> left;
-        sstream.ignore(); // ignoriert Leerzeichen
+
+        sstream.skipWhiteSpace(); // ignoriert Leerzeichen
         if(left == "Content-Length:")
         {
             sstream >> size;
         }
         if(left == "Transfer-Encoding:")
         {
-            string transferEncoding;
+            QString transferEncoding;
             sstream >> transferEncoding;
             if(transferEncoding == "chunked")
             {
@@ -611,22 +612,19 @@ int http::recv()
     int chunkSize = -1;
     int bytesToRecv = -1;
 
-
-    sHttpData.clear();
-    ostringstream fout;
+    QByteArray http_data;
 
     if(size != noSizeGiven) // Wenn die Größe über Content-length gegeben wurde
     {
-//        cout << "0%";
         while(recvSize < size)
         {
-            if((bytesRecv = RecvBuf(cBuf,BufSize)) <= 0)
+            QByteArray data_shunk;
+            if((bytesRecv = RecvAll(data_shunk)) <= 0)
             {
                 assert(false);
             }
             recvSize += bytesRecv;
-            fout.write(cBuf, bytesRecv);
- //           cout << "\r" << recvSize * 100 / size << "%" << flush; // Mit \r springen wir an den Anfang der Zeile
+            http_data += data_shunk;
         }
     }
     else
@@ -636,11 +634,12 @@ int http::recv()
  //           cout << "Downloading... (Unknown Filesize)" << endl;
             while(bytesRecv != 0) // Wenn recv 0 zurück gibt, wurde die Verbindung beendet
             {
-                if((bytesRecv = RecvBuf(cBuf,BufSize)) < 0)
+                QByteArray data_shunk;
+                if((bytesRecv = RecvAll(data_shunk)) <= 0)
                 {
                     assert(false);
                 }
-                fout.write(cBuf, bytesRecv);
+                http_data += data_shunk;
             }
         }
         else
@@ -648,7 +647,7 @@ int http::recv()
 //            cout << "Downloading... (Chunked)" << endl;
             while(true)
             {
-                stringstream sstream;
+                QTextStream sstream;
                 GetLine(sstream);
                 chunkSize = -1;
                 sstream >> hex >> chunkSize; // Größe des nächsten Parts einlesen
@@ -660,13 +659,17 @@ int http::recv()
                 recvSize = 0; // Vor jeder Schleife wieder auf 0 setzen
                 while(recvSize < chunkSize)
                 {
+                    QByteArray data_shunk;
                     bytesToRecv = chunkSize - recvSize;
-                    if((bytesRecv = ::recv(s, cBuf, bytesToRecv > (int)sizeof(cBuf) ? sizeof(cBuf) : bytesToRecv, 0)) <= 0)
-                    {
-                        assert(false);
-                    }
+
+                    bytesRecv = RecvPart(data_shunk,bytesToRecv);
+
+                    //if((bytesRecv = ::recv(s, cBuf, bytesToRecv > (int)sizeof(cBuf) ? sizeof(cBuf) : bytesToRecv, 0)) <= 0)
+                    //{
+                    //    assert(false);
+                    //}
                     recvSize += bytesRecv;
-                    fout.write(cBuf, bytesRecv);
+                    http_data += data_shunk;
  //                   cout << "\r" << recvSize * 100 / chunkSize << "%" << flush;
                 }
 //                cout << endl;
@@ -679,7 +682,7 @@ int http::recv()
         }
     }
 //    cout << endl << "Finished!" << endl;
-    sHttpData = fout.str();
+    sHttpData = QString::fromUtf8(http_data);
 
     //ReplaceEveryThing(">","<|||\r\n");
     //ReplaceEveryThing("<|||",">");
@@ -692,11 +695,6 @@ int http::recv()
 	oFile << sHttpData;
 	oFile.close();
 #endif
-
-
-
-
-
 
 #if defined (_DEBUG) && defined (_CONSOLE) && !defined (NOOUTPUT)
 	if (sHttpData.length() != iLenGes) cout << "Recv Error: sRecvData.length(): " << sHttpData.length() << " und \"iLenGes:\" " << iLenGes << endl;

@@ -23,12 +23,12 @@ TransActAnt::TransActAnt(const int& A) :
 
 /*Depot::Depot()
 {
-	return;
+        return;
 }
 
 Depot::~Depot()
 {
-	return;
+        return;
 }*/
 
 /** @brief (one liner)
@@ -59,8 +59,8 @@ Depot::Depot(const char* cFile) :
     cDateBegin()
 {
     qInfo() << "Creating Deposet " << (long long)this << "from" << cFile;
-	LoadDepotFile(cFile);
-	return;
+    LoadDepotFile(cFile);
+    return;
 }
 
 Depot::~Depot()
@@ -175,10 +175,10 @@ void Depot::Delete (const int &iAt)
 }
 
 QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
-	//double dWert7, dWertGes7 = 0;
-	double dWert31, dWertGes31 = 0;
-	double dWertStart, dWertGesStart = 0;
-	double dWertGesammt = 0;
+    //double dWert7, dWertGes7 = 0;
+    double dWert31, dWertGes31 = 0;
+    double dWertStart, dWertGesStart = 0;
+    double dWertGesammt = 0;
 
     QString strText;
     QTextStream streamText(&strText,QIODevice::WriteOnly);
@@ -186,11 +186,11 @@ QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
     streamText << "Entwicklung vom " << cDateBegin.toString() << " bis zum " << cDateOfW.toString();
 
     streamText << '|' << qSetFieldWidth( 10 ) << "DepotPos" <<'|' << qSetFieldWidth( 10 ) << "Anteile" <<'|' << qSetFieldWidth( 10 ) << "Wert"  <<'|' <<
-        qSetFieldWidth( 10 ) << "+- Monat"  <<'|' << "+- Gesamt"  <<'|' << " Zins " << '|' ;
-        QList<DepotPos*>::const_iterator idDepot;
-	for (idDepot = begin(); idDepot != end();idDepot++)
-	{
-		dWertGesammt += (*idDepot)->GetCurrentDepotWert(cDateOfW);
+                  qSetFieldWidth( 10 ) << "+- Monat"  <<'|' << "+- Gesamt"  <<'|' << " Zins " << '|' ;
+    QList<DepotPos*>::const_iterator idDepot;
+    for (idDepot = begin(); idDepot != end();idDepot++)
+    {
+        dWertGesammt += (*idDepot)->GetCurrentDepotWert(cDateOfW);
         streamText << '|' << qSetFieldWidth( 10 ) << (*idDepot)->iDepotNr << '|';
         streamText << fixed;
         streamText << qSetRealNumberPrecision(4);
@@ -199,15 +199,15 @@ QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
         streamText << qSetRealNumberPrecision(2);
         streamText << qSetFieldWidth( 10 ) <<  (*idDepot)->GetCurrentDepotWert(cDateOfW) <<'|' ;
         dWert31 = (*idDepot)->GetCurrentTrend(cDateOfW.addDays(-31), cDateOfW);
-		dWertGes31 += dWert31;
+        dWertGes31 += dWert31;
         streamText << qSetFieldWidth( 10 ) <<  dWert31 <<'|' ;
-		dWertStart = (*idDepot)->GetCurrentTrend(cDateBegin,cDateOfW);
-		dWertGesStart += dWertStart;
+        dWertStart = (*idDepot)->GetCurrentTrend(cDateBegin,cDateOfW);
+        dWertGesStart += dWertStart;
         streamText << qSetFieldWidth( 10 ) <<  dWertStart <<'|' ;
         streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetDepotGrowth(cDateBegin,cDateOfW)  <<'|' ;
         streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetFondGrowth (cDateBegin,cDateOfW)  <<'|' ;
 
-	}
+    }
     streamText <<   qSetFieldWidth( 33 ) << dWertGesammt <<   /*qSetFieldWidth( 11 ) << dWertGes7 <<*/   qSetFieldWidth( 11 ) << dWertGes31  <<    qSetFieldWidth( 11 ) <<  dWertGesStart << qSetFieldWidth( 11 ) <<  CalculateZins(cDateBegin,cDateOfW) ;
     return strText;
 }
@@ -216,15 +216,15 @@ QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
 
 double Depot::GetDepotSetWert(const QDate &cDat)
 {
-	//int iDat;
-	double dMaxDWert = 0;
-        QList<DepotPos*>::const_iterator itDepot = begin();
-	for (; itDepot != end();itDepot++)
-	{
-		dMaxDWert += (*itDepot)->GetCurrentDepotWert(cDat);
+    //int iDat;
+    double dMaxDWert = 0;
+    QList<DepotPos*>::const_iterator itDepot = begin();
+    for (; itDepot != end();itDepot++)
+    {
+        dMaxDWert += (*itDepot)->GetCurrentDepotWert(cDat);
 
-	}
-	return dMaxDWert;
+    }
+    return dMaxDWert;
 }
 
 
@@ -232,73 +232,73 @@ double Depot::GetDepotSetWert(const QDate &cDat)
 
 double Depot::CalculateZins(const QDate& cdDatLow,const QDate &cdDatHigh)
 {
-/* Berechne: GesammtZins
+    /* Berechne: GesammtZins
 
-	*/
-	if (size() < 1) return 0;
+        */
+    if (size() < 1) return 0;
 
-	polynom pPolyGes;
-        QList<DepotPos*>::iterator itDepot;
+    polynom pPolyGes;
+    QList<DepotPos*>::iterator itDepot;
 
 
-	for (itDepot = begin(); itDepot != end(); itDepot ++)
-	{
-                QList<TransActAnt>::iterator itTAA;
-		PolynomElement peElement;
+    for (itDepot = begin(); itDepot != end(); itDepot ++)
+    {
+        QList<TransActAnt>::iterator itTAA;
+        PolynomElement peElement;
 #ifdef _console
-		cout << "Size: " << dDepot.size() << endl;
+        cout << "Size: " << dDepot.size() << endl;
 #endif
-		//for (itTAA = dDepot.begin();itTAA != dDepot.end(); itTAA++)
-		//	cout << itTAA->cDatum << " " << itTAA->iAnteile << endl;
+        //for (itTAA = dDepot.begin();itTAA != dDepot.end(); itTAA++)
+        //	cout << itTAA->cDatum << " " << itTAA->iAnteile << endl;
 
-		for (itTAA = (*itDepot)->dqTAA.begin();itTAA != (*itDepot)->dqTAA.end();itTAA++)
-		{
-			if ((itTAA->iType == 1)||(itTAA->cDatum <= cdDatLow)||(itTAA->cDatum >= cdDatHigh)) continue;
-			double dOldAnt = 0;
-			if (itTAA != (*itDepot)->dqTAA.begin())
-			{
-				itTAA--;
-				dOldAnt = itTAA->iAnteile;
-				itTAA++;
-			}
-			peElement.coefficient = (itTAA->iAnteile - dOldAnt) * (*itDepot)->GetCurrentFondWert(itTAA->cDatum);
+        for (itTAA = (*itDepot)->dqTAA.begin();itTAA != (*itDepot)->dqTAA.end();itTAA++)
+        {
+            if ((itTAA->iType == 1)||(itTAA->cDatum <= cdDatLow)||(itTAA->cDatum >= cdDatHigh)) continue;
+            double dOldAnt = 0;
+            if (itTAA != (*itDepot)->dqTAA.begin())
+            {
+                itTAA--;
+                dOldAnt = itTAA->iAnteile;
+                itTAA++;
+            }
+            peElement.coefficient = (itTAA->iAnteile - dOldAnt) * (*itDepot)->GetCurrentFondWert(itTAA->cDatum);
 
-                        peElement.exponent = itTAA->cDatum.daysTo(cdDatHigh); //cdDatHigh - itTAA->cDatum;
-			pPolyGes.push_back(peElement);
-		}
-		peElement.coefficient = (*itDepot)->GetCurrentDepotWert (cdDatHigh) * (-1);
-		peElement.exponent = 0;
-		pPolyGes.push_back(peElement);
-		peElement.coefficient = (*itDepot)->GetCurrentDepotWert (cdDatLow);
-                peElement.exponent = cdDatLow.daysTo(cdDatHigh);
-		pPolyGes.push_back(peElement);
+            peElement.exponent = itTAA->cDatum.daysTo(cdDatHigh); //cdDatHigh - itTAA->cDatum;
+            pPolyGes.push_back(peElement);
+        }
+        peElement.coefficient = (*itDepot)->GetCurrentDepotWert (cdDatHigh) * (-1);
+        peElement.exponent = 0;
+        pPolyGes.push_back(peElement);
+        peElement.coefficient = (*itDepot)->GetCurrentDepotWert (cdDatLow);
+        peElement.exponent = cdDatLow.daysTo(cdDatHigh);
+        pPolyGes.push_back(peElement);
 
-	}
-	double dZinsTag = pPolyGes.CalculateZero(1);
-	double dZins = pow(dZinsTag,365);
-	return (dZins-1) * 100;
+    }
+    double dZinsTag = pPolyGes.CalculateZero(1);
+    double dZins = pow(dZinsTag,365);
+    return (dZins-1) * 100;
 }
 
 double Depot::GetMaxDepotSetWert(QDate& cdDatLow, QDate& cdDatHigh)
 {
-	if ((cdDatLow == cdStart) && (cdEnd == cdDatHigh))
-	{
-		return dCurrentMaxDepotSetWert;
-	}
+    if ((cdDatLow == cdStart) && (cdEnd == cdDatHigh))
+    {
+        return dCurrentMaxDepotSetWert;
+    }
 
-	cdStart = cdDatLow; cdEnd = cdDatHigh;
+    cdStart = cdDatLow; cdEnd = cdDatHigh;
 
-        QDate cHelp = cdDatLow;
-	double dMaxDSWert = 0;
-	double dCurentDSWert;
+    QDate cHelp = cdDatLow;
+    double dMaxDSWert = 0;
+    double dCurentDSWert;
 
-        for (; cHelp <= cdDatHigh ;cHelp=cHelp.addDays(1))
-	{
-                dCurentDSWert = GetDepotSetWert(cHelp);
-		if (dMaxDSWert < dCurentDSWert) dMaxDSWert = dCurentDSWert;
-	}
-	dCurrentMaxDepotSetWert = dMaxDSWert;
-	return dMaxDSWert;
+    for (; cHelp <= cdDatHigh ;cHelp=cHelp.addDays(1))
+    {
+        dCurentDSWert = GetDepotSetWert(cHelp);
+        if (dMaxDSWert < dCurentDSWert) dMaxDSWert = dCurentDSWert;
+    }
+    dCurrentMaxDepotSetWert = dMaxDSWert;
+    return dMaxDSWert;
 }
 
 bool Depot::ResetMaxDates()
@@ -316,13 +316,13 @@ void Depot::ClearDepots()
 
 double Depot::GetCurrentDSTrend(const QDate &DStart, const QDate &DEnd)
 {
-	double dTrend = 0;
-        QList<DepotPos*>::const_iterator itDepot = begin();
-	for (; itDepot != end();itDepot++)
-	{
-		dTrend += (*itDepot)->GetCurrentTrend(DStart,DEnd);
-	}
-	return dTrend;
+    double dTrend = 0;
+    QList<DepotPos*>::const_iterator itDepot = begin();
+    for (; itDepot != end();itDepot++)
+    {
+        dTrend += (*itDepot)->GetCurrentTrend(DStart,DEnd);
+    }
+    return dTrend;
 }
 
 
@@ -335,8 +335,8 @@ bool Depot::AddDepot (const char* sWKN, int iDepotNr)
 
 bool Depot::AddDepot (DepotPos *pdAdd)
 {
-	push_back(pdAdd);
-	return true;
+    push_back(pdAdd);
+    return true;
 }
 
 /** @brief (one liner)
@@ -470,10 +470,10 @@ void Depot::MakeAutomaticTransaction(const QDate & dDate, double &dBargeld, doub
 
     if (pOS) *pOS << ")\tBargeld, Nach Kauf:" << dBargeld << endl;
     */
-    if (pOS) *pOS << "Transaktionen am " << dDate
-            << ")\tBargeld, Beginn:" << dBargeld
-            << "\tWP: " << GetDepotSetWert(dDate)
-            << endl << "Kaufsorders:" << endl;
+    if (pOS) *pOS << "Transaktionen am " << dDate.toString()
+                  << ")\tBargeld, Beginn:" << dBargeld
+                  << "\tWP: " << GetDepotSetWert(dDate)
+                  << endl << "Kaufsorders:" << endl;
 
     QList<DepotPos*>::iterator itDeotPos;
     double dBar = dBargeld;
@@ -485,8 +485,8 @@ void Depot::MakeAutomaticTransaction(const QDate & dDate, double &dBargeld, doub
         pDepPos->AddTransAction(dDate,dKauf);
         dBargeld -= dKauf;
         if (pOS) *pOS << "[" << pDepPos->iDepotNr << "]"
-                << " von " << dKauf
-                << endl;
+                      << " von " << dKauf
+                      << endl;
     }
     if (pOS) *pOS << ")\tBargeld, Nach Kauf:" << dBargeld << endl;
 }
@@ -503,9 +503,6 @@ void Depot::DeleteAllTransactions()
 
 
 }
-
-
-
 
 bool SortByDepotNr(DepotPos* pdA, DepotPos*pdB)
 {

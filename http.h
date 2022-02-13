@@ -73,16 +73,15 @@ public:
 
   bool SendAll(const QByteArray &buf) ;
   bool SendAll(const QString &buf) ;
-  int RecvBuf(QByteArray &buf);
-  int RecvBuf(QString &sData);
+  int RecvAll(QByteArray &buf);
+  int RecvPart(QByteArray &buf, int maxSize);
+
+  //int RecvAll(QString &sData);
 };
 
 
 class http : public wsock
 {
-private:
-  //wsock cWsock;
-
 public:
   QString cAddr;
   QTextStream ssFondData;

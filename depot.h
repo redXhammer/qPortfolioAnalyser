@@ -44,16 +44,17 @@ struct DepotTable
 class DepotPos
 {
   friend class Depot;
+  friend bool SortByDepotNr(DepotPos* pdA, DepotPos*pdB);
 protected:
   QList<TransActAnt> dqTAA;
 public:
   DepotPos();
-  DepotPos(const char*);
-  DepotPos(const char* sWKN, int iDepotNr);
+  DepotPos(const QString sWKN);
+  DepotPos(const QString sWKN, int iDepotNr);
   ~DepotPos();
   int AddTransAction(const QDate&,const double&);
   int AddItem(const QDate &, const double &);
-  int AddGewinn(QDate, double);
+  int AddGewinn(const QDate &, double);
   TransActAnt GetCurrentFondAnt(const QDate&);
   double GetCurrentFondWert(const QDate&);
   double GetCurrentDepotWert(const QDate&);

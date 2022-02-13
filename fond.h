@@ -87,13 +87,13 @@ public:
     FondStorage();
     ~FondStorage();
 
-    fond* AddFond(const char* wkn);
-    fond* GetFondClass(const char* wkn);
+    fond* AddFond(const QString wkn);
+    fond* GetFondClass(const QString wkn);
 
-    bool LoadContainerFile(const char* file);
+    bool LoadContainerFile(const QString file);
     bool UpdateLoadesFiles();
     bool SyncWithInternet();
-    bool SaveContainerFile(const char* file);
+    bool SaveContainerFile(const QString file);
     int GetFilteredList(std::vector<std::string> & vList);
     bool GetKagFonds(int iKagNr);
     QMap<int,QString> GetKags();
