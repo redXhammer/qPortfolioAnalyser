@@ -109,12 +109,6 @@ protected:
 };
 
 
-
-
-//void* GetFondClass(char*);
-//void DeleteFonds() ;
-
-
 #ifdef FondFile
 QDate iDateToday;
 //int iCountFonds = 0;

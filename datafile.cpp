@@ -2,9 +2,11 @@
 
 #include <QDebug>
 
+//int Level = 0;
+
 QTextStream& operator<< (QTextStream& stream, const KursUndDatum &kud)
 {
-    stream << kud.cDatum.toString() << kud.iKurs;
+    stream << kud.cDatum.toString() << " " << kud.iKurs;
     return stream;
 }
 
@@ -20,12 +22,12 @@ QTextStream& operator>> (QTextStream& stream, KursUndDatum &kud)
 template <class KK, class TT>
 QTextStream& operator<< (QTextStream& stream, const QMap<KK, TT> &map)
 {
-    stream << map.size();
+    stream << map.size() << endl;
 
     typename QMap<KK, TT>::const_iterator it;
     for (it = map.begin(); it != map.end(); it++)
     {
-        stream << it.key() << it.value() << endl;
+        stream << it.key() << " " << it.value() << endl;
     }
     return stream;
 }
@@ -33,14 +35,21 @@ QTextStream& operator<< (QTextStream& stream, const QMap<KK, TT> &map)
 template <class Key, class T>
 QTextStream& operator>> (QTextStream& stream, QMap<Key, T> &map)
 {
+    if (stream.atEnd())
+      return stream;
     int size;
     stream >> size;
     for (int i = 0; i < size; i++)
     {
-        Key key;
-        T t;
-        stream >> key >> t;
-        map.insert(key, t);
+      Key key;
+      T t;
+      if (stream.atEnd())
+        return stream;
+      stream >> key;
+      if (stream.atEnd())
+        return stream;
+      stream >> t;
+      map.insert(key, t);
     }
     return stream;
 }
@@ -48,12 +57,12 @@ QTextStream& operator>> (QTextStream& stream, QMap<Key, T> &map)
 template <typename TT>
 QTextStream& operator<< (QTextStream& stream, const QList<TT> &list)
 {
-    stream << list.size();
+    stream << list.size() << endl;
 
     typename QList<TT>::const_iterator it;
     for (it = list.begin(); it != list.end(); it++)
     {
-        stream << *it;
+        stream << *it << endl;
     }
     return stream;
 }
@@ -61,6 +70,9 @@ QTextStream& operator<< (QTextStream& stream, const QList<TT> &list)
 template <typename T>
 QTextStream& operator>> (QTextStream& stream, QList<T> &list)
 {
+    if (stream.atEnd())
+      return stream;
+
     int size;
     stream >> size;
     list.clear();
@@ -68,6 +80,8 @@ QTextStream& operator>> (QTextStream& stream, QList<T> &list)
     for (int i = 0; i < size; i++)
     {
         T t;
+        if (stream.atEnd())
+          return stream;
         stream >> t;
         list.push_back(t);
     }
@@ -89,6 +103,7 @@ bool DataFile::open(const QString& cFileOpen)
         stream >> mData;
         stream >> mVect;
     }
+    pFile.close();
     return true;
 }
 

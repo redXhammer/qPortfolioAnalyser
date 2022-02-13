@@ -23,6 +23,7 @@ public:
     bool List();
     HtmlNode* GetSubNode(QString);
     QString GetCurrentPath();
+    void Search(const QString& search);
 };
 
 class html //: public http
@@ -43,8 +44,9 @@ class html //: public http
     bool cdTotalDir(QString);
     void List();
     void Clear();
-    int PrintChildNodes (HtmlNode& vectNode, bool bOptions);
-    int PrintChildNodes (bool bOptions = false){return PrintChildNodes(*hCurrentNode, bOptions);};
+    void Search(const QString& search);
+    int PrintChildNodes (HtmlNode& vectNode, bool bOptions, int level);
+    int PrintChildNodes (bool bOptions = false){return PrintChildNodes(*hCurrentNode, bOptions, 0);};
 
 
 };
@@ -56,13 +58,15 @@ public:
   MyTextStream(QByteArray *array)       : QTextStream(array) {}
   MyTextStream(const QByteArray &array) : QTextStream(array) {}
 
-  QString readUntil(const QChar &sep)
+  QString readUntil(const QChar &sep, bool putback = false)
   {
     QChar ch;
     QString str;
     while (!atEnd()) {
       QTextStream::operator >>(ch);
       if (ch == sep) {
+        if (putback)
+          seek(pos()-1);
         break;
       }
       str += ch;
@@ -72,9 +76,9 @@ public:
 
   void putback(const QChar &chr)
   {
-    seek(-1);
+    seek(pos()-1);
     QTextStream::operator<<(chr);
-    seek(-1);
+    seek(pos()-1);
   }
 private:
   QString backputchars;

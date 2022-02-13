@@ -85,7 +85,7 @@ bool Depot::LoadDepotFile (const QString &cFile)
 
     while(!fsDepotFile.atEnd())
     {
-        QString sDepotData = QString::fromUtf8(fsDepotFile.readLine());
+        QString sDepotData = QString::fromUtf8(fsDepotFile.readLine().trimmed());
 
         if (sDepotData.size() > 3) {
             if (sDepotData[2] == ':'){

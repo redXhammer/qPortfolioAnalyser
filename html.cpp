@@ -54,7 +54,7 @@ QString HtmlNode::GetCurrentPath()
 
         if (vNodesWithName.size() == 1)
         {
-            strPath = "/" + pCurrentNode->sName + strPath;
+            strPath.prepend( "/" + pCurrentNode->sName );
             pCurrentNode = pCurrentNode->phnParentNode;
         }
         else
@@ -67,12 +67,29 @@ QString HtmlNode::GetCurrentPath()
                     iPos = i+1;
                 }
             }
-            strPath = "/" + pCurrentNode->sName + iPos  + strPath;
+            strPath.prepend("/" + pCurrentNode->sName + QString::number(iPos) );
             pCurrentNode = pCurrentNode->phnParentNode;
         }
 
     }
     return strPath;
+}
+
+void HtmlNode::Search(const QString& search)
+{
+    if (sName.contains(search))
+    {
+        qInfo() << GetCurrentPath() << " : " << sName;
+    }
+    for (int i = 0;i < vectHtmlChildNode.size(); i++)
+    {
+        vectHtmlChildNode[i]->Search(search);
+    }
+}
+
+void html::Search(const QString &search)
+{
+    hnEntryNode.Search(search);
 }
 
 
@@ -120,13 +137,19 @@ int html::open(QString cLocation)
 
     while (!IStream.atEnd())
     {
+        if (IStream.status() != QTextStream::Ok)
+        {
+          qInfo() << "Bad stream Status" << IStream.status();
+          break;
+        }
+
         IStream >> cBeginNode;
         if (cBeginNode == '<')
         {
             QString sNodeContent;
             sNodeContent = IStream.readUntil('>');
 
-            qInfo() << "Processing: " << sNodeContent;
+            //qInfo().noquote().nospace() << "Processing: >>" << sNodeContent << "<<";
 
             if (sNodeContent[0] != '/')
             {
@@ -177,11 +200,13 @@ int html::open(QString cLocation)
 
 
                 pCurrentParentNode->vectHtmlChildNode.push_back(phmNewNode);
+#ifdef VERBOSE_HTML
                 qInfo() << "Created new Node. Name: " << phmNewNode->sName
                      << " as Subelement No. " << pCurrentParentNode->vectHtmlChildNode.size()
                      << " in " << pCurrentParentNode->sName
                      << " with " << phmNewNode->vectHtmlParams.size()
                      << " Params.";
+#endif
                 pCurrentParentNode = pCurrentParentNode->vectHtmlChildNode.back();
             }
             else
@@ -192,7 +217,8 @@ int html::open(QString cLocation)
                 if (iEndOfName != -1)
                     sNodeContent.remove(iEndOfName);
 
-                qInfo() << "Closeing " << sNodeContent << " : ";
+                //qInfo().noquote().nospace() << "Closeing: >>" << sNodeContent << "<<";
+
                 while (pCurrentParentNode->sName != sNodeContent &&
                        pCurrentParentNode->phnParentNode != &hnEntryNode &&
                        pCurrentParentNode != &hnEntryNode)
@@ -231,42 +257,24 @@ int html::open(QString cLocation)
                     //PrintChildNodes(this->hnEntryNode);
                     CheckTree();
                     pCurrentParentNode = Parent;
-
                 }
 
-                //pCurrentParentNode = pCurrentParentNode->phnParentNode;
+                pCurrentParentNode = pCurrentParentNode->phnParentNode;
+#ifdef VERBOSE_HTML
                 qInfo() << "Moving back to " << pCurrentParentNode->sName << ".";
-
+#endif
             }
-
-
         }
         else
         {
-
             QString sNodeContent;
-            sNodeContent = IStream.readUntil('<');
-            IStream.putback('<');
-            //cout << "Processing Text: " << sNodeContent << endl;
-            int itStr = 0;
-            while ((itStr=sNodeContent.indexOf('\r',itStr)) != -1)
-            {
-                sNodeContent.remove(itStr,1);
-            }
-            itStr = 0;
-            while ((itStr=sNodeContent.indexOf('\n',itStr)) != -1)
-            {
-                sNodeContent.remove(itStr,1);
-            }
+            sNodeContent = IStream.readUntil('<',true);
+            sNodeContent.push_front(cBeginNode); // The first char was already read
+            sNodeContent = sNodeContent.trimmed();
 
-            while (sNodeContent.length() > 0)
-            {
-                if (sNodeContent[0] == ' ') sNodeContent.remove(0,1);
-                else break;
-            }
             if (sNodeContent.length() > 0)
             {
-
+                //qInfo().noquote().nospace() << "Processing Text: >>" << sNodeContent << "<<";
                 HtmlNode* phmNewNode = new HtmlNode(pCurrentParentNode);
                 phmNewNode->sName = sNodeContent;
                 pCurrentParentNode->vectHtmlChildNode.push_back(phmNewNode);
@@ -327,7 +335,7 @@ bool HtmlNode::CheckSubNodes()
 bool HtmlNode::List()
 {
     for (int i = 0;i < vectHtmlChildNode.size(); i++)
-        qInfo() << vectHtmlChildNode[i]->sName;
+        qInfo().noquote() << "-" << vectHtmlChildNode[i]->sName;
 
     return true;
 }
@@ -371,10 +379,8 @@ QVector<HtmlNode*> HtmlNode::GetElementsByName(const QString &cName)
 
 
 
-int html::PrintChildNodes (HtmlNode& vectNode, bool bOptions)
+int html::PrintChildNodes (HtmlNode& vectNode, bool bOptions, int level)
 {
-    static int iLayer = -1;
-    iLayer++;
     QVector<HtmlNode*>::iterator itHtmlChildNode = vectNode.vectHtmlChildNode.begin();
 
     for (;itHtmlChildNode!= vectNode.vectHtmlChildNode.end(); itHtmlChildNode++)
@@ -382,8 +388,27 @@ int html::PrintChildNodes (HtmlNode& vectNode, bool bOptions)
         QByteArray buf;
         QTextStream cout(&buf);
 
-        for (int iFor = 0; iFor < iLayer;iFor++) cout << " |";
-        cout << "-" << (*itHtmlChildNode)->sName;
+        for (int iFor = 0; iFor < level;iFor++) cout << " |";
+
+        QString name = (*itHtmlChildNode)->sName;
+        bool bAddDots = false;
+        if (name.contains('\n'))
+        {
+          name = name.left(name.indexOf('\n'));
+          name = name.trimmed();
+          bAddDots = true;
+        }
+
+        if (name.length() > 40)
+        {
+          name = name.left(40).trimmed();
+          bAddDots = true;
+        }
+
+        if (bAddDots)
+          name += "...";
+
+        cout << "-" << name;
         if (bOptions) {
             QVector<QString>::iterator itParam = (*itHtmlChildNode)->vectHtmlParams.begin();
             for (;itParam != (*itHtmlChildNode)->vectHtmlParams.end();itParam++)
@@ -391,12 +416,11 @@ int html::PrintChildNodes (HtmlNode& vectNode, bool bOptions)
                 cout << endl << *itParam;
             }
         }
-        cout << endl;
+        cout.flush();
         qInfo().noquote() << buf;
 
-        PrintChildNodes (**itHtmlChildNode,bOptions);
+        PrintChildNodes (**itHtmlChildNode,bOptions,level+1);
     }
-    iLayer--;
     return 0;
 }
 
@@ -470,7 +494,7 @@ bool html::cdDown(QString str,bool bList)
     }
     else
     {
-        qInfo() << "Path: " << hCurrentNode->GetCurrentPath();
+        qInfo() << "Path: " << hCurrentNode->GetCurrentPath() << "has multiple enements:" << str;
         List();
         qInfo() << "Enter number 1 .. " << vH.size();
         int i;
@@ -488,6 +512,7 @@ bool html::cdDown(QString str,bool bList)
 
 bool html::cdTotalDir(QString sDir)
 {
+    qInfo() << "cdTotalDir:" << sDir;
     bool bOK = true;
     if (sDir.isEmpty()) return false;
     if(sDir[0] != '/') return false;
@@ -511,7 +536,7 @@ bool html::cdTotalDir(QString sDir)
         if (!bOK)
         {
             qInfo() << "could not find " << sDir.mid(0,fPos);
-            PrintChildNodes(*hCurrentNode,false);
+            PrintChildNodes();
             return false;
         }
 
@@ -533,4 +558,6 @@ void html::Clear()
     hnEntryNode.phnParentNode = NULL;
     hCurrentNode = &hnEntryNode;
 }
+
+
 

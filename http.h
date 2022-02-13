@@ -2,8 +2,8 @@
 #define httpFileHeader
 
 
-#define LOWOUTPUT
-#define NOOUTPUT
+//#define LOWOUTPUT
+//#define NOOUTPUT
 
 
 
@@ -68,7 +68,9 @@ public:
   int verbinden(const QString &cAddr, int iPort);
   ulong GetHost(const QString &cAddr);
 
-  void GetLine(QTextStream& line);
+  void SSL_error(int error);
+
+  bool GetLine(QTextStream& line, bool skipEmpty = false);
 
   bool SendAll(const QByteArray &buf) ;
   bool SendAll(const QString &buf) ;
@@ -84,6 +86,7 @@ class http : public wsock
 {
 public:
   QString cAddr;
+  QString cUrl;
   QTextStream ssFondData;
   QString strFondData;
 
@@ -92,8 +95,8 @@ public:
   QString sHttpData;
   int iLastStatusResponse;
 
-  bool SendGetRequest(const QString cUrl);
-  bool SendPostRequest(const QString cUrl, const QString cPost);
+  bool SendGetRequest(const QString url);
+  bool SendPostRequest(const QString url, const QString cPost);
 
   QDate GetAuflageDatum(const QString cUrl);
   http();

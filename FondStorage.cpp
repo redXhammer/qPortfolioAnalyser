@@ -224,12 +224,9 @@ bool FondStorage::GetKagFonds(int iKagNr)
             cAddress += cPostData;
 
             cHttp.SendGetRequest(cAddress) ;
-            //cHttp.recv();
-
 
             cHttp.ClipHttpCommand("div","class=\"inhalt t1\"");
             cHttp.ClipHttpCommand("table","");
-
 
             cHttp.ReplaceEveryThing("<tr>","\n");
             cHttp.DeleteEveryThing("</tr>");

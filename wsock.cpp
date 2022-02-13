@@ -199,6 +199,25 @@ ulong wsock::GetHost(const QString &cAddr)
 
 //===========================================================================
 
+void wsock::SSL_error(int error)
+{
+    int err = SSL_get_error(ssl, error);
+    switch (err) {
+    case SSL_ERROR_WANT_WRITE:
+      qWarning() << "SSL_ERROR_WANT_WRITE";
+      break;
+    case SSL_ERROR_WANT_READ:
+      qWarning() << "SSL_ERROR_WANT_READ";
+      break;
+    case SSL_ERROR_ZERO_RETURN:
+    case SSL_ERROR_SYSCALL:
+    case SSL_ERROR_SSL:
+    default:
+      qWarning() << "SSL_ERROR_ other";
+      break;
+    }
+}
+
 bool wsock::SendAll(const QByteArray &buf)
 {
   if (iStatus == WStatConected) {
@@ -211,21 +230,7 @@ bool wsock::SendAll(const QByteArray &buf)
         bytesSent += iBS;
       else
       {
-        int err = SSL_get_error(ssl, iBS);
-        switch (err) {
-        case SSL_ERROR_WANT_WRITE:
-          qWarning() << "SSL_ERROR_WANT_WRITE";
-          break;
-        case SSL_ERROR_WANT_READ:
-          qWarning() << "SSL_ERROR_WANT_READ";
-          break;
-        case SSL_ERROR_ZERO_RETURN:
-        case SSL_ERROR_SYSCALL:
-        case SSL_ERROR_SSL:
-        default:
-          qWarning() << "SSL_ERROR_ other";
-          break;
-        }
+        SSL_error(iBS);
 
 #ifndef linux
         qWarning() << "Sent Failed" << WSAGetLastError();
@@ -255,9 +260,9 @@ int wsock::RecvPart(QByteArray &buf, int maxSize)
     int iBytesRecv = SSL_read(ssl, buf.data(), maxSize);
     if (iBytesRecv > 0)
     {
-#ifndef LOWOUTPUT
-      qInfo() << "iBytesRecv" << iBytesRecv;
-#endif
+//#ifndef LOWOUTPUT
+      //qInfo() << "iBytesRecv" << iBytesRecv;
+//#endif
       buf.resize(iBytesRecv);
       return iBytesRecv;
     }
@@ -274,9 +279,10 @@ int wsock::RecvPart(QByteArray &buf, int maxSize)
     else if (iBytesRecv < 0)
     {
 #ifndef linux
-      qWarning() << "Error in Sent. Code : " << WSAGetLastError() << " : " << WSAEWOULDBLOCK;
+        qWarning() << "Error in Recv. Code : " << WSAGetLastError() << " : " << WSAEWOULDBLOCK;
 #else
-      qWarning() << "Error in Sent.";
+        //qWarning() << "Error in Recv.";
+        SSL_error(iBytesRecv);
 #endif
       return -1;
     }
@@ -320,19 +326,29 @@ int wsock::RecvAll(QString &sData)
   return sData.length();
 }
 
-void wsock::GetLine(QTextStream& line)
+bool wsock::GetLine(QTextStream& line, bool skipEmpty)
 {
-  for(char c; SSL_read(ssl, &c, 1) > 0;)
-  {
-    if(c == '\r')
-      continue;
-
-    if(c == '\n')
+    if (iStatus != WStatConected)
+        return false;
+    int res;
+    char c;
+    int count = 0;
+    while( (res = SSL_read(ssl, &c, 1)) == 1)
     {
-      qInfo().noquote() << "wsock::GetLine():" << *line.string();
-      return;
+        if(c == '\r')
+            continue;
+
+        if(c == '\n')
+        {
+            if (count == 0 && skipEmpty)
+                continue; //If empty read next line
+
+            //qInfo().noquote() << "wsock::GetLine():" << *line.string();
+            return true;
+        }
+        count++;
+        line << c;
     }
-    line << c;
-  }
-  assert(false);
+    SSL_error(res);
+    return false;
 }

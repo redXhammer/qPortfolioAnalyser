@@ -25,17 +25,17 @@ QString fond::GetWknFileName()
 
 fond::fond(const QString &sWkn2) /***************** Konstructor der Fond-Klasse mit übergabe der WKN **************/
 {
-  iKUD = 0;
-  sWknFileName = "fonddaten/";
+    iKUD = 0;
+    sWknFileName = "fonddaten/";
 
-  sWkn = sWkn2;
-  sWknFileName += sWkn;
-  sWknFileName += ".fdd";
+    sWkn = sWkn2;
+    sWknFileName += sWkn;
+    sWknFileName += ".fdd";
 #ifndef NOOUTPUT
-  qInfo() << "Datum der Fonddatei" << DateOfWkn();
+    qInfo() << "Datum der Fonddatei" << DateOfWkn();
 #endif
-  iStatus = 1;
-  return;
+    iStatus = 1;
+    return;
 }
 
 bool fond::LoadAllData()
@@ -69,30 +69,30 @@ bool fond::LoadAllData()
 
 int fond::LoadFondKurse()
 {
-  KursUndDatum kudHelp;
+    KursUndDatum kudHelp;
 
-  QList<KursUndDatum> vKurse = WknFile.GetVect("Fond","Kurse");
-  if (vKurse.size() == 0)
-  {
-    qInfo() << "No File Opened";
-    DownloadFondData();
-    qInfo() << "Speichern : " << SaveFondData() << " Einträge";
+    QList<KursUndDatum> vKurse = WknFile.GetVect("Fond","Kurse");
+    if (vKurse.size() == 0)
+    {
+        qInfo() << "No File Opened";
+        DownloadFondData();
+        qInfo() << "Speichern : " << SaveFondData() << " Einträge";
 
-    iKUD = 0;
-    iStatus = 0;
-    return dqKUD.size();
-  }
+        iKUD = 0;
+        iStatus = 0;
+        return dqKUD.size();
+    }
 
     kudHelp = vKurse.at(0);
 
-	if ((DateOfWkn() < (iDateToday)) || AKTUALISIEREN) /************** Beginn des Aktualisierungsprozess *************/
-	{
+    if ((DateOfWkn() < (iDateToday)) || AKTUALISIEREN) /************** Beginn des Aktualisierungsprozess *************/
+    {
 #ifndef NOOUTPUT
         qInfo() << "Datum des letzen lokalen Fondeintrags: " << kudHelp.cDatum;
         qInfo() << "Aktualisiere ... ";
 #endif
 
-		DownloadFondData(kudHelp.cDatum);
+        DownloadFondData(kudHelp.cDatum);
 
 #ifndef NOOUTPUT
         qInfo() << "Fertig";
@@ -101,24 +101,24 @@ int fond::LoadFondKurse()
 
         dqKUD.append(vKurse);
 
-    #ifndef NOOUTPUT
+#ifndef NOOUTPUT
         qInfo() << "Speichern : " << SaveFondData() << " Einträge";
-	#else
-		SaveFondData();
-    #endif
-	} else {
-    #ifndef NOOUTPUT
+#else
+        SaveFondData();
+#endif
+    } else {
+#ifndef NOOUTPUT
         qInfo() <<"First: " << kudHelp.cDatum << " "<< kudHelp.iKurs;
-    #endif
+#endif
         dqKUD.append(vKurse);
-    #ifndef NOOUTPUT
+#ifndef NOOUTPUT
         kudHelp = dqKUD.back();
         qInfo() <<"Last: " << kudHelp.cDatum << " "<< kudHelp.iKurs;
-    #endif
-	}
+#endif
+    }
 
-	iKUD = 0;
-	iStatus = 0;
+    iKUD = 0;
+    iStatus = 0;
     return dqKUD.size();
 }
 
@@ -133,7 +133,13 @@ int fond::LoadFondAuss()
         sUrlHistEig += "/ausschuettungen/";
         hSite.open(sUrlHistEig);
 
-        hSite.cdTotalDir("/html/body/div3/div2/div8/div/table");
+        if (!hSite.cdTotalDir("/html/body/div1/div2/div9/div/div2/div5/div/table"))
+        {
+            qInfo() << "===============PrintChildNodes==================";
+            hSite.PrintChildNodes();
+            qInfo() << "=======End=====PrintChildNodes==================";
+            return -1;
+        }
 
         QVector<HtmlNode*> vhnTR = hSite.hCurrentNode->GetElementsByName("tr");
 
@@ -222,26 +228,26 @@ QList<KursUndDatum> fond::DownloadFondAuss()
 
 int fond::SaveFondData()
 {
-  int iSaveCount = 0;
-  //std::fstream oFile(sWknFileName.c_str(),ios::out);		// Speichern der Daten
-  QList<KursUndDatum> &lkudOldVect = WknFile.GetVect("Fond","Kurse");
+    int iSaveCount = 0;
+    //std::fstream oFile(sWknFileName.c_str(),ios::out);		// Speichern der Daten
+    QList<KursUndDatum> &lkudOldVect = WknFile.GetVect("Fond","Kurse");
 
-  QList<KursUndDatum>::iterator vIt(dqKUD.begin());  // Iterator am Anfang des Vektors
-  for (;vIt != dqKUD.end(); vIt++)
-  {
-    if ((*vIt).cDatum.isValid())
+    QList<KursUndDatum>::iterator vIt(dqKUD.begin());  // Iterator am Anfang des Vektors
+    for (;vIt != dqKUD.end(); vIt++)
     {
-      lkudOldVect.append(*vIt) ;
-      iSaveCount++;
+        if ((*vIt).cDatum.isValid())
+        {
+            lkudOldVect.append(*vIt) ;
+            iSaveCount++;
+        }
     }
-  }
-  WknFile.AddData("Fond","LastUpdate",iDateToday.toString());
-  WknFile.save(sWknFileName);
+    WknFile.AddData("Fond","LastUpdate",iDateToday.toString());
+    WknFile.save(sWknFileName);
 #ifndef LOWOUTPUT
-  qInfo() << "geschrieben";
+    qInfo() << "geschrieben";
 #endif
 
-  return iSaveCount;
+    return iSaveCount;
 }
 
 
@@ -250,10 +256,10 @@ int fond::SaveFondData()
 
 int fond::DownloadFondData(QDate cdMax) {
 
-	//int iPage = 0;
-	int iNewDataCount = 0;
+    //int iPage = 0;
+    int iNewDataCount = 0;
 
-	KursUndDatum kudKursUndDatum;
+    KursUndDatum kudKursUndDatum;
 
 
 
@@ -270,7 +276,13 @@ int fond::DownloadFondData(QDate cdMax) {
         cUrl += STsURL;
         cUrl += "/historische_kurse";
         hSite.open(cUrl);
-        hSite.cdTotalDir("/html/body/div3/div2/div8/div2/ul2");
+        if (!hSite.cdTotalDir("/html/body/div3/div2/div8/div2/ul2"))
+        {
+            qInfo() << "===============PrintChildNodes==================";
+            hSite.PrintChildNodes();
+            qInfo() << "=======End=====PrintChildNodes==================";
+            return -1;
+        }
 
         QVector<HtmlNode*> vhtmlnodeListTR;
         QVector<HtmlNode*>::iterator itNodeFromList;
@@ -281,8 +293,8 @@ int fond::DownloadFondData(QDate cdMax) {
         QString sBoerse;
 
         for (itNodeFromList = vhtmlnodeListTR.begin();
-            itNodeFromList != vhtmlnodeListTR.end();
-            itNodeFromList++)
+             itNodeFromList != vhtmlnodeListTR.end();
+             itNodeFromList++)
         {
             HtmlNode* pNode = *itNodeFromList;
             pNode = pNode->GetElementsByName("a")[0]; //a mit href -> BID
@@ -306,6 +318,7 @@ int fond::DownloadFondData(QDate cdMax) {
 
         }
 
+
         int iBID = sBID2.toInt(/* bOK */);
         qInfo() << "Benutze: " << sBoerse << " (" << iBID << ")";
 
@@ -318,25 +331,25 @@ int fond::DownloadFondData(QDate cdMax) {
 
 
 
-	while(cHttp.GetFondData(kudKursUndDatum) == 0)
-	{
-      if (cdMax.isValid() && (cdMax >= kudKursUndDatum.cDatum))
-			{
-				break;
-			}
-			dqKUD.push_back(kudKursUndDatum);
-			iNewDataCount++;
-	};
+    while(cHttp.GetFondData(kudKursUndDatum) == 0)
+    {
+        if (cdMax.isValid() && (cdMax >= kudKursUndDatum.cDatum))
+        {
+            break;
+        }
+        dqKUD.push_back(kudKursUndDatum);
+        iNewDataCount++;
+    };
 
 
-	cHttp.Empty();
+    cHttp.Empty();
 
 #ifndef NOOUTPUT
     qInfo() << "Anzahl neuer Einträge: " << iNewDataCount;
-	if (iNewDataCount > 0) cout << "aktuellstes Datum: " << dqKUD.at(0).cDatum;
+    if (iNewDataCount > 0) qInfo() << "aktuellstes Datum: " << dqKUD.at(0).cDatum;
 #endif
 
-	return 0;
+    return 0;
 }
 
 
@@ -344,55 +357,54 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
 {
 
 #ifndef NOOUTPUT
-		cout << "Anfangsdatum: " << DStart;
-		cout << ", Enddatum: " << DEnd << endl;
+    qInfo() << "Anfangsdatum: " << DStart	 << ", Enddatum: " << DEnd ;
 #endif
 
-  QString cUrl;
-  QTextStream ssUrl(&cUrl);
+    QString cUrl;
+    QTextStream ssUrl(&cUrl);
 
-  ssUrl << "/quote/historic/historic.csv?secu=" << cSecu;
+    ssUrl << "/quote/historic/historic.csv?secu=" << cSecu;
 
-  ssUrl << "&boerse_id=" << iBoerseID;
+    ssUrl << "&boerse_id=" << iBoerseID;
 
-  if (DStart.isValid())
-	{
-    ssUrl << "&min_time=" << DStart.toString();
-  } else {
-    QDate dH = QDate::fromString("01.01.1990");
-    ssUrl << "&min_time=" << dH.toString();
-  }
+    if (DStart.isValid())
+    {
+        ssUrl << "&min_time=" << DStart.toString();
+    } else {
+        QDate dH = QDate::fromString("01.01.1990");
+        ssUrl << "&min_time=" << dH.toString("d.M.yyyy");
+    }
 
-  ssUrl << "&max_time=" << DEnd.toString();
-  ssUrl << "&clean_split=" << (bClean_Split?"1":"0");
-  ssUrl << "&clean_payout=" << (bClean_Payout?"1":"0");
-  ssUrl << "&clean_bezug=" << (bClean_Bezug?"1":"0");
-  ssUrl << "&trenner=%3B&go=Download";
+    ssUrl << "&max_time=" << DEnd.toString("d.M.yyyy");
+    ssUrl << "&clean_split=" << (bClean_Split?"1":"0");
+    ssUrl << "&clean_payout=" << (bClean_Payout?"1":"0");
+    ssUrl << "&clean_bezug=" << (bClean_Bezug?"1":"0");
+    ssUrl << "&trenner=%3B&go=Download";
 
 #ifndef LOWOUTPUT
-    cout << "Connecting with " << cAddr << endl;
+    qInfo() << "Connecting with " << cUrl;
 #endif
-  if (cHttp.verbinden(cHttp.cAddr,443) != 0) return -1;
+    if (cHttp.verbinden(cHttp.cAddr,443) != 0) return -1;
 
     if (cHttp.SendGetRequest(cUrl) == false) return - 1;
 
 
 
-	cHttp.ReplaceEveryThing (" " ,"X");
-	cHttp.ReplaceEveryThing (";" ," ");
-	cHttp.DeleteUntil("Volumen");
-	cHttp.DeleteEveryThing(".");
-	cHttp.ReplaceEveryThing(",",".");
+    cHttp.ReplaceEveryThing (" " ,"X");
+    cHttp.ReplaceEveryThing (";" ," ");
+    cHttp.DeleteUntil("Volumen");
+    cHttp.DeleteEveryThing(".");
+    cHttp.ReplaceEveryThing(",",".");
 
 
 
-	if (cHttp.sHttpData.length() > 0)
-	{
-		cHttp.ssFondData << cHttp.sHttpData;
-	}
-  cHttp.sHttpData.clear();
+    if (cHttp.sHttpData.length() > 0)
+    {
+        cHttp.ssFondData << cHttp.sHttpData;
+    }
+    cHttp.sHttpData.clear();
 
-	return 0;
+    return 0;
 }
 
 
@@ -405,45 +417,45 @@ double fond::GetCurrentWert(const QDate& cDatum)
     if (iStatus == 1) if (LoadAllData() == false) return 0;
 
 
-	if (dqKUD.size() == 1)
-	{
-		if (dqKUD[iKUD].cDatum > cDatum) return 0;
-		return dqKUD[iKUD].iKurs;
-	}
+    if (dqKUD.size() == 1)
+    {
+        if (dqKUD[iKUD].cDatum > cDatum) return 0;
+        return dqKUD[iKUD].iKurs;
+    }
 
-	while (dqKUD[iKUD].cDatum <= cDatum)
-	{
-	    if (iKUD == 0)
-	    {
-	        //cout << "Abort with " <<  iCountStep << " Steps: " << itKUDlow->cDatum << " " << itKUDlow->iKurs << " for " << (Datum) cDatum << endl;
-	        return dqKUD[iKUD].iKurs;
-	    }
+    while (dqKUD[iKUD].cDatum <= cDatum)
+    {
+        if (iKUD == 0)
+        {
+            //cout << "Abort with " <<  iCountStep << " Steps: " << itKUDlow->cDatum << " " << itKUDlow->iKurs << " for " << (Datum) cDatum << endl;
+            return dqKUD[iKUD].iKurs;
+        }
         //itKUDlow--;
         //itKUDhigh--;
         iKUD--;
         iCountStep++;
 
-	}
+    }
 
-	while ((cDatum < dqKUD[iKUD+1].cDatum) && ((iKUD+1) < dqKUD.size()))
-	{
-		//itKUDlow++;
-		//itKUDhigh++;
-		iKUD++;
-		iCountStep++;
-	}
+    while ((cDatum < dqKUD[iKUD+1].cDatum) && ((iKUD+1) < dqKUD.size()))
+    {
+        //itKUDlow++;
+        //itKUDhigh++;
+        iKUD++;
+        iCountStep++;
+    }
 
     //cout << (Datum) cDatum << "Post: " << itKUDhigh->cDatum << " ";
-	//cout << itKUDlow->cDatum << endl;
+    //cout << itKUDlow->cDatum << endl;
 
 
-	if (dqKUD[iKUD+1].cDatum > cDatum)
-	{
-	    return 0;
-	}
-	//cout << "With " <<  iCountStep << " Steps: " << itKUDhigh->cDatum << " " << itKUDhigh->iKurs << " for " << (Datum) cDatum << endl;
+    if (dqKUD[iKUD+1].cDatum > cDatum)
+    {
+        return 0;
+    }
+    //cout << "With " <<  iCountStep << " Steps: " << itKUDhigh->cDatum << " " << itKUDhigh->iKurs << " for " << (Datum) cDatum << endl;
 
-	return dqKUD[iKUD+1].iKurs;
+    return dqKUD[iKUD+1].iKurs;
 }
 
 double fond::GetAussFactor(const QDate& cDat)
@@ -451,43 +463,43 @@ double fond::GetAussFactor(const QDate& cDat)
     //cout << "double fond::GetAussFactor" << endl;
     if (iStatus == 1) if (LoadAllData() == false) return 0;
     if (dqAusschuettung.size() == 0) return 1;
-	if (dqAusschuettung.size() == 1)
-	{
-		if (itAussLow->cDatum > cDat) return itAussLow->iKurs;
-		return 1;
-	}
+    if (dqAusschuettung.size() == 1)
+    {
+        if (itAussLow->cDatum > cDat) return itAussLow->iKurs;
+        return 1;
+    }
 
-	while (itAussLow->cDatum <= cDat)
-	{
+    while (itAussLow->cDatum <= cDat)
+    {
 
-		if (itAussLow == dqAusschuettung.begin())
-		{
-			return 1;
-		}
-		itAussLow--;
-		itAussHigh--;
-	}
-	while (cDat < itAussHigh->cDatum)
-	{
+        if (itAussLow == dqAusschuettung.begin())
+        {
+            return 1;
+        }
+        itAussLow--;
+        itAussHigh--;
+    }
+    while (cDat < itAussHigh->cDatum)
+    {
         itAussLow++;
         itAussHigh++;
-		if (itAussHigh == dqAusschuettung.end())
-		{
+        if (itAussHigh == dqAusschuettung.end())
+        {
             itAussLow--;
             itAussHigh--;
-			return itAussHigh->iKurs;
-		}
+            return itAussHigh->iKurs;
+        }
 
-	}
+    }
     //cout << (Datum) cDat << "Post: " << itAussHigh->cDatum << " ";
-	//cout << itAussLow->cDatum << endl;
+    //cout << itAussLow->cDatum << endl;
 
-	return itAussLow->iKurs;
+    return itAussLow->iKurs;
 }
 
 double fond::GetTotalWert(const QDate &cDatum)
 {
-  return GetCurrentWert(cDatum) / GetAussFactor(cDatum.addDays(-1));
+    return GetCurrentWert(cDatum) / GetAussFactor(cDatum.addDays(-1));
 }
 
 double fond::GetCurrentAverage(const QDate &cDatum, int iTage)
@@ -499,7 +511,7 @@ double fond::GetCurrentAverage(const QDate &cDatum, int iTage)
     dSum /= iTage;
 
 
-	return dSum;
+    return dSum;
 }
 
 void fond::DownloadFundamental()
@@ -511,7 +523,13 @@ void fond::DownloadFundamental()
     html hSite;
     hSite.open(cUrl);
 
-    hSite.cdTotalDir("/html/body/div3/div2/div8");
+    if (!hSite.cdTotalDir("/html/body/div3/div2/div8"))
+    {
+        qInfo() << "===============PrintChildNodes==================";
+        hSite.PrintChildNodes();
+        qInfo() << "=======End=====PrintChildNodes==================";
+        return;
+    }
 
     /*std::vector<HtmlNode*> vhnDiv = hSite.hCurrentNode->GetElementsByName("div");
     std::vector<HtmlNode*>::iterator itDiv;
@@ -560,7 +578,13 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
     hSite.open(cUrl);
 
     // Secu
-    if (hSite.cdTotalDir("/div/input1") == false) return false;
+    if (hSite.cdTotalDir("/div/input1") == false)
+    {
+        qInfo() << "===============PrintChildNodes==================";
+        hSite.PrintChildNodes();
+        qInfo() << "=======End=====PrintChildNodes==================";
+        return false;
+    }
     QString sHelp = hSite.hCurrentNode->vectHtmlParams[2];
     sSecu = sHelp.mid(7,sHelp.size() - 8);
 
@@ -568,8 +592,8 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
     if (hSite.cdTotalDir("/div/table/tr/td1/a") == false) return false;
     sHelp =  hSite.hCurrentNode->vectHtmlParams[0];
     sURL = sHelp.mid(6,sHelp.size()-7);
-
-	return true;
+    //sSecu = sURL;
+    return true;
 }
 
 

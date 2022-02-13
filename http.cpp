@@ -5,6 +5,7 @@
 
 #include "QTextStream"
 #include "QDebug"
+#include "QFile"
 
 //#define LOWOUTPUT
 //#define _DEBUG
@@ -396,8 +397,9 @@ int http::Empty()
 }
 
 
-bool http::SendGetRequest(const QString cUrl)
+bool http::SendGetRequest(const QString url)
 {
+  cUrl = url;
   QString request;
   request = "GET ";
   request += cUrl;
@@ -434,8 +436,9 @@ bool http::SendGetRequest(const QString cUrl)
 }
 
 
-bool http::SendPostRequest(const QString cUrl, const QString cPost)
+bool http::SendPostRequest(const QString url, const QString cPost)
 {
+  cUrl = url;
   QString request;
   QTextStream ssOut(&request);
   ssOut << "POST "
@@ -554,17 +557,18 @@ int http::recv()
     int size = noSizeGiven;
     int code = 100; // 100 = Continue
     QString Protokoll;
-    QTextStream firstLine; // Die erste Linie ist anders aufgebaut als der Rest
+    QString firstLineData;
+    QTextStream firstLine(&firstLineData); // Die erste Linie ist anders aufgebaut als der Rest
 
     while(code == 100)
     {
         GetLine(firstLine);
         firstLine >> Protokoll;
         firstLine >> code;
-        if(code == 100)
-        {
-            GetLine(firstLine); // Leere Zeile nach Continue ignorieren
-        }
+        //if(code == 100)
+        //{
+        //    GetLine(firstLine); // Leere Zeile nach Continue ignorieren
+        //}
     }
     qInfo() << "Protokoll: " << Protokoll;
     iLastStatusResponse = code;
@@ -580,7 +584,8 @@ int http::recv()
 
     while(true)
     {
-        QTextStream sstream;
+        QString sstreamData;
+        QTextStream sstream(&sstreamData);
         GetLine(sstream);
         QString left; // Das was links steht
         sstream >> left;
@@ -648,10 +653,28 @@ int http::recv()
             qInfo() << "Downloading... (Chunked)" << endl;
             while(true)
             {
-                QTextStream sstream;
-                GetLine(sstream);
-                chunkSize = -1;
-                sstream >> hex >> chunkSize; // Größe des nächsten Parts einlesen
+                bool bOK;
+                QString sstreamData;
+                QTextStream sstream(&sstreamData);
+
+                int i = 0;
+                while (!GetLine(sstream,true))
+                {
+                    if(i++>10)
+                    {
+                        qWarning() << "Got emplty line,quit";
+                        return -1;
+                    }
+                    qWarning() << "Got emplty line";
+                }
+
+                chunkSize = sstreamData.toInt(&bOK,16); // Größe des nächsten Parts einlesen
+                if (!bOK)
+                {
+                    qWarning() << "Failed reading chunk size:" << sstreamData;
+                    break;
+                }
+
                 if(chunkSize <= 0)
                 {
                     qInfo() << "Finished:" << chunkSize;
@@ -665,38 +688,45 @@ int http::recv()
                     bytesToRecv = chunkSize - recvSize;
 
                     bytesRecv = RecvPart(data_shunk,bytesToRecv);
+                    if (bytesRecv < 0)
+                    {
+                      qWarning() << "Error reading from socket";
+                      qInfo() << http_data;
+                      return -1;
+                    }
 
-                    //if((bytesRecv = ::recv(s, cBuf, bytesToRecv > (int)sizeof(cBuf) ? sizeof(cBuf) : bytesToRecv, 0)) <= 0)
-                    //{
-                    //    assert(false);
-                    //}
                     recvSize += bytesRecv;
                     http_data += data_shunk;
- //                   qInfo() << "\r" << recvSize * 100 / chunkSize << "%" << flush;
+//                   qInfo() << "\r" << recvSize * 100 / chunkSize << "%" << flush;
                 }
-//                cout << endl;
-                for(int i = 0; i < 2; ++i)
-                {
-                    char temp;
-                    ::recv(s, &temp, 1, 0);
-                }
+//                qInfo() << endl;
+//                for(int i = 0; i < 2; ++i)
+//                {
+//                    char temp;
+//                    ::recv(s, &temp, 1, 0); //Nessesary?????
+//                }
             }
         }
     }
 //    qInfo() << endl << "Finished!" << endl;
     sHttpData = QString::fromUtf8(http_data);
 
+
+
     //ReplaceEveryThing(">","<|||\r\n");
     //ReplaceEveryThing("<|||",">");
 
-#if defined (_DEBUG) && defined (_CONSOLE)
-	fstream oFile("Http.txt",ios::out);
-	if(!oFile.good()) {
-  qInfo() << "http::recv--Kann nicht schreiben-" << endl;
-	}
-	oFile << sHttpData;
-	oFile.close();
-#endif
+//#if defined (_DEBUG) && defined (_CONSOLE)
+    qInfo() << "Writing response to:" << cUrl;
+
+
+    QFile oFile(cUrl.remove('/').remove('\\'));
+    if(!oFile.open(QIODevice::WriteOnly)) {
+      qInfo() << "http::recv--Kann nicht schreiben-" << endl;
+    }
+    oFile.write(sHttpData.toUtf8());
+    oFile.close();
+//#endif
 
 #if defined (_DEBUG) && defined (_CONSOLE) && !defined (NOOUTPUT)
   if (sHttpData.length() != iLenGes) qInfo() << "Recv Error: sRecvData.length(): " << sHttpData.length() << " und \"iLenGes:\" " << iLenGes << endl;
