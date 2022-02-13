@@ -1,20 +1,69 @@
 #include "http.h"
 
+#include "QDebug"
+
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #define WStatDisconected  0
 #define WStatConected  1
 
-#define LOWOUTPUT
+//#define LOWOUTPUT
 
 using namespace std;
 
 bool bWsaStarted = false;
 long rc;
 
+void log_ssl()
+{
+    int err;
+    while ((err = ERR_get_error()))
+    {
+        char *str = ERR_error_string(err, 0);
+        if (!str)
+            return;
+
+        qWarning() << str;
+    }
+}
+
 
 wsock::wsock()
 {
   iStatus = WStatDisconected;
-  s = 0;
+  sock = 0;
+  ssl = nullptr;
+  return;
+}
+
+//===========================================================================
+
+wsock::~wsock()
+{
+#ifndef LOWOUTPUT
+  qInfo() << "Deleting wsock";
+#endif
+  close();
+}
+
+void wsock::close()
+{
+  qInfo() << "close" ;
+  iStatus = WStatDisconected;
+  if (sock)
+#ifdef linux
+    ::close(sock); // Verbindung beenden
+#else
+    closesocket(sock); // Windows-Variante
+#endif
+  if (ssl)
+    SSL_free(ssl);
+
+  sock = 0;
+  ssl = nullptr;
+
+    //SSL_CTX_free(ctx);
   return;
 }
 
@@ -22,26 +71,22 @@ wsock::wsock()
 
 int wsock::verbinden(const QString &cAddr, int iPort)
 {
+  int s;
   if (iStatus == WStatConected){
 #ifndef LOWOUTPUT
-    cout << "Still Connected, Closing" << endl;
+    qInfo() << "Still Connected, Closing";
 #endif
-    iStatus = WStatDisconected;
-#ifdef linux
-    close(s); // Verbindung beenden
-#else
-    closesocket(s); // Windows-Variante
-#endif
+    close();
   }
   bError = true;
 #ifndef LOWOUTPUT
-  cout << "Creating wsock" << endl;
+  qInfo() << "Creating wsock";
 #endif
 #ifndef linux
   WSADATA w;
   if(int result = WSAStartup(MAKEWORD(2,2), &w) != 0)
   {
-    cout << "Winsock 2 konnte nicht gestartet werden! Error #" << result << endl;
+    qInfo() << "Winsock 2 konnte nicht gestartet werden! Error #" << result;
     return -1;
   }
 #endif
@@ -49,44 +94,65 @@ int wsock::verbinden(const QString &cAddr, int iPort)
   if(s==-1)
   {
 #ifndef linux
-    cout <<"Fehler: Der Socket konnte nicht erstellt werden, fehler code:" << WSAGetLastError() << endl;
+    qInfo() <<"Fehler: Der Socket konnte nicht erstellt werden, fehler code:" << WSAGetLastError();
 #else
-    cout <<"Fehler: Der Socket konnte nicht erstellt werden!" << endl;
+    qInfo() <<"Fehler: Der Socket konnte nicht erstellt werden!";
 #endif
     return -1;
   }else{
 #ifndef LOWOUTPUT
-    cout << "Socket erstellt!" << endl;
+    qInfo() << "Socket erstellt!";
 #endif
   }
 
+#ifndef linux
+  SOCKADDR_IN addr;
+#else
+  sockaddr_in addr;
+#endif
+
   memset(&addr,0,sizeof(sockaddr_in)); // zuerst alles auf 0 setzten
   addr.sin_family=AF_INET;
-  addr.sin_port=htons(iPort); // wir verwenden mal port 12345
-  addr.sin_addr.s_addr=GetHost(cAddr); // zielrechner ist unser eigener
+  addr.sin_port=htons(iPort);
+  addr.sin_addr.s_addr=GetHost(cAddr);
 
   rc = connect(s,(sockaddr*)&addr,sizeof(sockaddr));
 
   if(rc==-1)
   {
 #ifndef linux
-    cout << "Fehler: connect gescheitert, fehler code:" << WSAGetLastError() << endl;
+    qInfo() << "Fehler: connect gescheitert, fehler code:" << WSAGetLastError();
 #else
-    cout << "Fehler: connect gescheitert" << endl;
+    qInfo() << "Fehler: connect gescheitert";
 #endif
 
-#ifdef linux
-    close(s); // Verbindung beenden
-#else
-    closesocket(s); // Windows-Variante
-#endif
-
+    close();
     return -1;
 #ifndef LOWOUTPUT
   }else{
-    cout << "Verbunden mit " << cAddr;
+    qInfo() << "Verbunden mit " << cAddr;
 #endif
   }
+
+  const SSL_METHOD *meth = TLS_client_method() ; //TLSv1_2_client_method();
+  SSL_CTX *ctx = SSL_CTX_new (meth);
+  ssl = SSL_new (ctx);
+  if (!ssl) {
+    qWarning("Error creating SSL.\n");
+    log_ssl();
+    return -1;
+  }
+
+  SSL_set_fd(ssl, s);
+  int err = SSL_connect(ssl);
+  if (err <= 0) {
+    qWarning("Error creating SSL connection.  err=%x", err);
+    log_ssl();
+    return -1;
+  }
+  qInfo() << "SSL connection using" << SSL_get_cipher (ssl);
+
+
   iStatus = WStatConected;
   bError = false;
   return 0;
@@ -100,9 +166,9 @@ ulong wsock::GetHost(const QString &cAddr)
   unsigned long ip;
   hostent* he;
 
-  if(cAddr==NULL)
+  if(cAddr.isEmpty())
   {
-    cout << "No Address" << endl;
+    qWarning() << "No Address";
     return 0;
   }
 
@@ -111,17 +177,17 @@ ulong wsock::GetHost(const QString &cAddr)
 
   {
 #ifndef LOWOUTPUT
-    cout << "IP" << endl;
+    qInfo() << "IP";
 #endif
     return ip;
   } else {
 #ifndef LOWOUTPUT
-    cout << "Url" << endl;
+    qInfo() << "Url";
 #endif
     he=gethostbyname(cAddr.toUtf8().data());
     if(he==NULL)
     {
-      cout << "he==NULL" << endl;
+      qWarning() << "he==NULL" << cAddr;
       return 0;
     }else{
 
@@ -129,27 +195,6 @@ ulong wsock::GetHost(const QString &cAddr)
       return uRet;
     }
   }
-}
-
-
-
-
-//===========================================================================
-
-
-wsock::~wsock()
-{
-#ifndef LOWOUTPUT
-  cout << "Deleting wsock" << endl;
-#endif
-  iStatus = WStatDisconected;
-  if (s)
-#ifdef linux
-    close(s); // Verbindung beenden
-#else
-    closesocket(s); // Windows-Variante
-#endif
-  return;
 }
 
 //===========================================================================
@@ -162,14 +207,30 @@ bool wsock::SendAll(const QByteArray &buf)
     int size = buf.size();
     do
     {
-      if ((iBS = send(s, buf.data() + bytesSent, size - bytesSent, 0)) > 0)
+      if ((iBS = SSL_write(ssl, buf.data() + bytesSent, size - bytesSent)) > 0)
         bytesSent += iBS;
       else
       {
+        int err = SSL_get_error(ssl, iBS);
+        switch (err) {
+        case SSL_ERROR_WANT_WRITE:
+          qWarning() << "SSL_ERROR_WANT_WRITE";
+          break;
+        case SSL_ERROR_WANT_READ:
+          qWarning() << "SSL_ERROR_WANT_READ";
+          break;
+        case SSL_ERROR_ZERO_RETURN:
+        case SSL_ERROR_SYSCALL:
+        case SSL_ERROR_SSL:
+        default:
+          qWarning() << "SSL_ERROR_ other";
+          break;
+        }
+
 #ifndef linux
-        cout << "Sent Failed" << WSAGetLastError() << endl;
+        qWarning() << "Sent Failed" << WSAGetLastError();
 #else
-        cout << "Sent Failed" << endl;
+        qWarning() << "Sent Failed" << endl;
 #endif
         iStatus = WStatDisconected;
         return false;
@@ -177,7 +238,7 @@ bool wsock::SendAll(const QByteArray &buf)
     } while(bytesSent < size);
   } else {
 #ifndef NOOUTPUT
-    cout << "Not Connected:" << endl;
+    qWarning() << "Not Connected:";
 #endif
     return false;
   }
@@ -189,48 +250,40 @@ bool wsock::SendAll(const QByteArray &buf)
 int wsock::RecvPart(QByteArray &buf, int maxSize)
 {
   buf.resize(maxSize);
-  if (iStatus == WStatConected) {
-    maxSize--;
-    int iBytesRecv = recv(s, buf.data(), maxSize, 0);
-    /*if (iSent == WSAEWOULDBLOCK)
-    {
-      cout << "Empty" << WSAGetLastError() << " : " << WSAEWOULDBLOCK << endl;
-      bData[iSent] = 0;
-      return 0;
-    }
-    else if (iSent > 0)*/
+  if (iStatus == WStatConected)
+  {
+    int iBytesRecv = SSL_read(ssl, buf.data(), maxSize);
     if (iBytesRecv > 0)
     {
+#ifndef LOWOUTPUT
+      qInfo() << "iBytesRecv" << iBytesRecv;
+#endif
       buf.resize(iBytesRecv);
       return iBytesRecv;
     }
     else if (iBytesRecv == 0)
     {
 #ifndef LOWOUTPUT
-      cout << "Connection Close" << endl;
+      qWarning() << "Connection Close";
 #endif
-#ifdef linux
-      close(s); // Verbindung beenden
-#else
-      closesocket(s); // Windows-Variante
-#endif
-      iStatus = WStatDisconected;
+
+      close();
       buf.clear();
       return iBytesRecv;
     }
     else if (iBytesRecv < 0)
     {
 #ifndef linux
-      cout << "Error in Sent. Code : " << WSAGetLastError() << " : " << WSAEWOULDBLOCK << endl;
+      qWarning() << "Error in Sent. Code : " << WSAGetLastError() << " : " << WSAEWOULDBLOCK;
 #else
-      cout << "Error in Sent." << endl;
+      qWarning() << "Error in Sent.";
 #endif
       return -1;
     }
     return -1;
   } else {
 #ifndef NOOUTPUT
-    cout << "Not Connected" << endl;
+    qWarning() << "Not Connected";
 #endif
     return -1;
   }
@@ -265,4 +318,21 @@ int wsock::RecvAll(QString &sData)
   RecvAll(data);
   sData = QString::fromUtf8(data);
   return sData.length();
+}
+
+void wsock::GetLine(QTextStream& line)
+{
+  for(char c; SSL_read(ssl, &c, 1) > 0;)
+  {
+    if(c == '\r')
+      continue;
+
+    if(c == '\n')
+    {
+      qInfo().noquote() << "wsock::GetLine():" << *line.string();
+      return;
+    }
+    line << c;
+  }
+  assert(false);
 }

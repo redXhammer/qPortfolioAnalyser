@@ -32,6 +32,7 @@
 
 #include <QDate>
 #include <QTextStream>
+#include <openssl/ssl.h>
 
 #include "kursunddatum.h"
 
@@ -50,12 +51,12 @@ class wsock
 private:
 public:
 #ifndef linux
-  SOCKET s;
-  SOCKADDR_IN addr;
+  SOCKET sock;
 #else
-  int s;
-  sockaddr_in addr;
+  int sock;
 #endif
+
+  SSL *ssl;
 
   bool bError;
   int iStatus;
@@ -63,15 +64,11 @@ public:
 
   wsock();
   ~wsock();
+  void close();
   int verbinden(const QString &cAddr, int iPort);
   ulong GetHost(const QString &cAddr);
 
-  void GetLine(QTextStream& line){
-    for(char c; recv(s, &c, 1, 0) > 0; line << c)
-      if(c == '\n')
-        return;
-    assert(false);
-  }
+  void GetLine(QTextStream& line);
 
   bool SendAll(const QByteArray &buf) ;
   bool SendAll(const QString &buf) ;
