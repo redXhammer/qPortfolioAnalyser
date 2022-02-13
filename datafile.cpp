@@ -144,7 +144,7 @@ QString DataFile::GetData(ITdblMAP itDataClass, const QString &cName)
     return "";
 }
 
-QList<KursUndDatum> &DataFile::GetVect(const char* cDataClass, const char* cName)
+QList<KursUndDatum> &DataFile::GetVect(const QString & cDataClass, const QString & cName)
 {
     return mVect[cDataClass][cName];
 }

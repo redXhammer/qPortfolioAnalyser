@@ -13,122 +13,122 @@ long rc;
 
 wsock::wsock()
 {
-	iStatus = WStatDisconected;
-	s = 0;
-	return;
+  iStatus = WStatDisconected;
+  s = 0;
+  return;
 }
 
 //======================================================================================
 
-int wsock::verbinden(const char* cAddr, int iPort)
+int wsock::verbinden(const QString &cAddr, int iPort)
 {
-    if (iStatus == WStatConected){
+  if (iStatus == WStatConected){
 #ifndef LOWOUTPUT
-		cout << "Still Connected, Closing" << endl;
+    cout << "Still Connected, Closing" << endl;
 #endif
-		iStatus = WStatDisconected;
+    iStatus = WStatDisconected;
 #ifdef linux
-        close(s); // Verbindung beenden
+    close(s); // Verbindung beenden
 #else
-        closesocket(s); // Windows-Variante
+    closesocket(s); // Windows-Variante
 #endif
-    }
-	bError = true;
+  }
+  bError = true;
 #ifndef LOWOUTPUT
-	cout << "Creating wsock" << endl;
+  cout << "Creating wsock" << endl;
 #endif
 #ifndef linux
-	WSADATA w;
-    if(int result = WSAStartup(MAKEWORD(2,2), &w) != 0)
-    {
-        cout << "Winsock 2 konnte nicht gestartet werden! Error #" << result << endl;
-        return -1;
-    }
+  WSADATA w;
+  if(int result = WSAStartup(MAKEWORD(2,2), &w) != 0)
+  {
+    cout << "Winsock 2 konnte nicht gestartet werden! Error #" << result << endl;
+    return -1;
+  }
 #endif
-	s=socket(AF_INET,SOCK_STREAM,0);
-	if(s==-1)
-	{
+  s=socket(AF_INET,SOCK_STREAM,0);
+  if(s==-1)
+  {
 #ifndef linux
-		cout <<"Fehler: Der Socket konnte nicht erstellt werden, fehler code:" << WSAGetLastError() << endl;
+    cout <<"Fehler: Der Socket konnte nicht erstellt werden, fehler code:" << WSAGetLastError() << endl;
 #else
-        cout <<"Fehler: Der Socket konnte nicht erstellt werden!" << endl;
+    cout <<"Fehler: Der Socket konnte nicht erstellt werden!" << endl;
 #endif
-		return -1;
-	}else{
+    return -1;
+  }else{
 #ifndef LOWOUTPUT
-		cout << "Socket erstellt!" << endl;
+    cout << "Socket erstellt!" << endl;
 #endif
-	}
+  }
 
-	memset(&addr,0,sizeof(sockaddr_in)); // zuerst alles auf 0 setzten
-	addr.sin_family=AF_INET;
-	addr.sin_port=htons(iPort); // wir verwenden mal port 12345
-	addr.sin_addr.s_addr=GetHost(cAddr); // zielrechner ist unser eigener
+  memset(&addr,0,sizeof(sockaddr_in)); // zuerst alles auf 0 setzten
+  addr.sin_family=AF_INET;
+  addr.sin_port=htons(iPort); // wir verwenden mal port 12345
+  addr.sin_addr.s_addr=GetHost(cAddr); // zielrechner ist unser eigener
 
-	rc = connect(s,(sockaddr*)&addr,sizeof(sockaddr));
+  rc = connect(s,(sockaddr*)&addr,sizeof(sockaddr));
 
-	if(rc==-1)
-	{
+  if(rc==-1)
+  {
 #ifndef linux
-		cout << "Fehler: connect gescheitert, fehler code:" << WSAGetLastError() << endl;
+    cout << "Fehler: connect gescheitert, fehler code:" << WSAGetLastError() << endl;
 #else
-        cout << "Fehler: connect gescheitert" << endl;
+    cout << "Fehler: connect gescheitert" << endl;
 #endif
 
 #ifdef linux
-        close(s); // Verbindung beenden
+    close(s); // Verbindung beenden
 #else
-        closesocket(s); // Windows-Variante
+    closesocket(s); // Windows-Variante
 #endif
 
-		return -1;
+    return -1;
 #ifndef LOWOUTPUT
-	}else{
-		cout << "Verbunden mit " << cAddr;
+  }else{
+    cout << "Verbunden mit " << cAddr;
 #endif
-	}
-	iStatus = WStatConected;
-	bError = false;
-	return 0;
+  }
+  iStatus = WStatConected;
+  bError = false;
+  return 0;
 }
 //==============================================================================
 
-ulong wsock::GetHost(const char* cAddr)
+ulong wsock::GetHost(const QString &cAddr)
 {
 
-	ulong uRet;
-	unsigned long ip;
-	hostent* he;
+  ulong uRet;
+  unsigned long ip;
+  hostent* he;
 
-	if(cAddr==NULL)
-	{
-		cout << "No Address" << endl;
-		return 0;
-	}
+  if(cAddr==NULL)
+  {
+    cout << "No Address" << endl;
+    return 0;
+  }
 
-	ip=inet_addr(cAddr);
-	if(ip!=INADDR_NONE)
+  ip=inet_addr(cAddr.toUtf8().data());
+  if(ip!=INADDR_NONE)
 
-	{
+  {
 #ifndef LOWOUTPUT
-		cout << "IP" << endl;
+    cout << "IP" << endl;
 #endif
-		return ip;
-	} else {
+    return ip;
+  } else {
 #ifndef LOWOUTPUT
-		cout << "Url" << endl;
+    cout << "Url" << endl;
 #endif
-		he=gethostbyname(cAddr);
-		if(he==NULL)
-		{
-			cout << "he==NULL" << endl;
-			return 0;
-		}else{
+    he=gethostbyname(cAddr.toUtf8().data());
+    if(he==NULL)
+    {
+      cout << "he==NULL" << endl;
+      return 0;
+    }else{
 
-			memcpy(&uRet,he->h_addr_list[0],4);
-			return uRet;
-		}
-	}
+      memcpy(&uRet,he->h_addr_list[0],4);
+      return uRet;
+    }
+  }
 }
 
 
@@ -140,112 +140,129 @@ ulong wsock::GetHost(const char* cAddr)
 wsock::~wsock()
 {
 #ifndef LOWOUTPUT
-	cout << "Deleting wsock" << endl;
+  cout << "Deleting wsock" << endl;
 #endif
-	iStatus = WStatDisconected;
-	if (s)
+  iStatus = WStatDisconected;
+  if (s)
 #ifdef linux
     close(s); // Verbindung beenden
 #else
     closesocket(s); // Windows-Variante
 #endif
-	return;
+  return;
 }
 
 //===========================================================================
 
-bool wsock::SendAll(const char* buf, const int size)
+bool wsock::SendAll(const QByteArray &buf)
 {
-    if (iStatus == WStatConected) {
-		int bytesSent = 0; // Anzahl Bytes die wir bereits vom Buffer gesendet haben
-		int iBS = 0;
-		do
-		{
-			if ((iBS = send(s, buf + bytesSent, size - bytesSent, 0)) > 0)
-				bytesSent += iBS;
-			else
-			{
+  if (iStatus == WStatConected) {
+    int bytesSent = 0; // Anzahl Bytes die wir bereits vom Buffer gesendet haben
+    int iBS = 0;
+    int size = buf.size();
+    do
+    {
+      if ((iBS = send(s, buf.data() + bytesSent, size - bytesSent, 0)) > 0)
+        bytesSent += iBS;
+      else
+      {
 #ifndef linux
-				cout << "Sent Failed" << WSAGetLastError() << endl;
+        cout << "Sent Failed" << WSAGetLastError() << endl;
 #else
-                cout << "Sent Failed" << endl;
+        cout << "Sent Failed" << endl;
 #endif
-				iStatus = WStatDisconected;
-				return false;
-			}
-		} while(bytesSent < size);
-	} else {
+        iStatus = WStatDisconected;
+        return false;
+      }
+    } while(bytesSent < size);
+  } else {
 #ifndef NOOUTPUT
-		cout << "Not Connected:" << endl;
+    cout << "Not Connected:" << endl;
 #endif
-		return false;
-	}
-	return true;
+    return false;
+  }
+  return true;
 }
 
 //===========================================================================
 
-int wsock::RecvBuf(char* bData, int len)
+int wsock::RecvPart(QByteArray &buf, int maxSize)
 {
-    if (iStatus == WStatConected) {
-		len--;
-		int iSent = recv(s, bData, len, 0);
-		/*if (iSent == WSAEWOULDBLOCK)
-		{
-			cout << "Empty" << WSAGetLastError() << " : " << WSAEWOULDBLOCK << endl;
-			bData[iSent] = 0;
-			return 0;
-		}
-		else if (iSent > 0)*/
-		if (iSent > 0)
-		{
-			bData[iSent] = 0;
-			return iSent;
-		}
-		else if (iSent == 0)
-		{
+  buf.resize(maxSize);
+  if (iStatus == WStatConected) {
+    maxSize--;
+    int iBytesRecv = recv(s, buf.data(), maxSize, 0);
+    /*if (iSent == WSAEWOULDBLOCK)
+    {
+      cout << "Empty" << WSAGetLastError() << " : " << WSAEWOULDBLOCK << endl;
+      bData[iSent] = 0;
+      return 0;
+    }
+    else if (iSent > 0)*/
+    if (iBytesRecv > 0)
+    {
+      buf.resize(iBytesRecv);
+      return iBytesRecv;
+    }
+    else if (iBytesRecv == 0)
+    {
 #ifndef LOWOUTPUT
-			cout << "Connection Close" << endl;
+      cout << "Connection Close" << endl;
 #endif
 #ifdef linux
-            close(s); // Verbindung beenden
+      close(s); // Verbindung beenden
 #else
-            closesocket(s); // Windows-Variante
+      closesocket(s); // Windows-Variante
 #endif
-            iStatus = WStatDisconected;
-			bData[iSent] = 0;
-			return iSent;
-		}
-		else if (iSent < 0)
-		{
+      iStatus = WStatDisconected;
+      buf.clear();
+      return iBytesRecv;
+    }
+    else if (iBytesRecv < 0)
+    {
 #ifndef linux
-			cout << "Error in Sent. Code : " << WSAGetLastError() << " : " << WSAEWOULDBLOCK << endl;
+      cout << "Error in Sent. Code : " << WSAGetLastError() << " : " << WSAEWOULDBLOCK << endl;
 #else
-            cout << "Error in Sent." << endl;
+      cout << "Error in Sent." << endl;
 #endif
-			return -1;
-		}
-		return -1;
-	} else {
+      return -1;
+    }
+    return -1;
+  } else {
 #ifndef NOOUTPUT
-		cout << "Not Connected" << endl;
+    cout << "Not Connected" << endl;
 #endif
-		return -1;
-	}
+    return -1;
+  }
 }
 
 //===========================================================================
 
-int wsock::RecvBuf(string &sData) {
-#define BLOCKSIZE 1000
-	char bData[BLOCKSIZE];
-	int iNewLen, iGesLen = 0;
+bool wsock::SendAll(const QString &buf)
+{
+  return SendAll(buf.toUtf8());
+}
 
-	while ((iNewLen = RecvBuf((char *)bData, BLOCKSIZE)) != 0)
-    {
-        sData += bData;
-        iGesLen += iNewLen;
-    }
-	return iGesLen;
+int wsock::RecvAll(QByteArray &buf)
+{
+  #define BLOCKSIZE 10000
 
+  int iNewLen, iGesLen = 0;
+  QByteArray data;
+  buf.clear();
+
+  while ((iNewLen = RecvPart(data, BLOCKSIZE)) != 0)
+  {
+    buf += data;
+    iGesLen += iNewLen;
+  }
+  return iGesLen;
+}
+
+int wsock::RecvAll(QString &sData)
+{
+  QByteArray data;
+  RecvAll(data);
+  sData = QString::fromUtf8(data);
+  return sData.length();
 }

@@ -64,6 +64,8 @@ public:
   wsock();
   ~wsock();
   int verbinden(const QString &cAddr, int iPort);
+  ulong GetHost(const QString &cAddr);
+
   void GetLine(QTextStream& line){
     for(char c; recv(s, &c, 1, 0) > 0; line << c)
       if(c == '\n')
@@ -74,9 +76,10 @@ public:
   bool SendAll(const QByteArray &buf) ;
   bool SendAll(const QString &buf) ;
   int RecvAll(QByteArray &buf);
+  int RecvAll(QString &sData);
   int RecvPart(QByteArray &buf, int maxSize);
 
-  //int RecvAll(QString &sData);
+
 };
 
 
@@ -97,8 +100,8 @@ public:
 
   QDate GetAuflageDatum(const QString cUrl);
   http();
-  http(const char* cAddr);
-  void SetAddr(const char* Addr){cAddr = Addr;return;}
+  http(const QString & cAddr);
+  void SetAddr(const QString & Addr){cAddr = Addr;return;}
   const QString GetAddr(){return cAddr;}
 
   int GetFondData(KursUndDatum &kud) ;

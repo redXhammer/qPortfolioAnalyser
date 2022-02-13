@@ -55,7 +55,7 @@ Depot::Depot(const Depot& A) :
     qInfo() << "Copying Depotset " << (long long)this;
 }
 
-Depot::Depot(const char* cFile) :
+Depot::Depot(const QString &cFile) :
     cDateBegin()
 {
     qInfo() << "Creating Deposet " << (long long)this << "from" << cFile;
@@ -69,7 +69,7 @@ Depot::~Depot()
 }
 
 
-bool Depot::LoadDepotFile (const char * cFile)
+bool Depot::LoadDepotFile (const QString &cFile)
 {
 
     QFile fsDepotFile(cFile);
@@ -85,7 +85,7 @@ bool Depot::LoadDepotFile (const char * cFile)
 
     while(!fsDepotFile.atEnd())
     {
-        QByteArray sDepotData = fsDepotFile.readLine();
+        QString sDepotData = QString::fromUtf8(fsDepotFile.readLine());
 
         if (sDepotData.size() > 3) {
             if (sDepotData[2] == ':'){
@@ -100,14 +100,14 @@ bool Depot::LoadDepotFile (const char * cFile)
                     sDepotData.remove(0,1);
                 }
 
-                size_t iPos;
+                int iPos;
                 if ((iPos = sDepotData.lastIndexOf("St")) != -1)
                 {
                     iType = 3;
                     sDepotData.remove(iPos,MAXINT32);
                 }
 
-                QByteArray sDepotData2 = sDepotData;
+                QString sDepotData2 = sDepotData;
                 sDepotData2.remove(0,8);
                 sDepotData.remove(9,MAXINT32);
                 if(pcDepot != 0)
@@ -326,7 +326,7 @@ double Depot::GetCurrentDSTrend(const QDate &DStart, const QDate &DEnd)
 }
 
 
-bool Depot::AddDepot (const char* sWKN, int iDepotNr)
+bool Depot::AddDepot (const QString &sWKN, int iDepotNr)
 {
     DepotPos * pdDepot = new DepotPos (sWKN,iDepotNr);
     push_back(pdDepot);
@@ -499,9 +499,6 @@ void Depot::DeleteAllTransactions()
     {
         (*itDepotPos)->dqTAA.clear();
     }
-
-
-
 }
 
 bool SortByDepotNr(DepotPos* pdA, DepotPos*pdB)

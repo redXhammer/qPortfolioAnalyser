@@ -84,9 +84,11 @@ private:
 
 public:
   Depot();
-  Depot(const char*);
+  Depot(const QString &);
   Depot(const Depot& A);
   ~Depot();
+
+  Depot& operator=(const Depot&) = default;
 
 
   QDate cDateBegin;
@@ -95,8 +97,8 @@ public:
 
   //QString sName;
 
-  bool LoadDepotFile(const char*);
-  bool AddDepot(const char* sWKN, int iDepotNr);
+  bool LoadDepotFile(const QString &);
+  bool AddDepot(const QString &sWKN, int iDepotNr);
   bool AddDepot(DepotPos *);
   void Delete (const int &iAt);
   void ClearDepots();
@@ -127,7 +129,7 @@ public:
 bool SortByDepotNr (DepotPos* ,DepotPos*);
 
 
-DepotPos* GetDepotClass(const QByteArray &cData);
+DepotPos* GetDepotClass(const QString &cData);
 void DeleteDepots() ;
 void InitDepots (void* pParam);
 

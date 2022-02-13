@@ -47,7 +47,7 @@ public:
     QString GetData(ITdblMAP itDataClass, const QString& cName);
 
 // mVect zugriff
-    QList<KursUndDatum>& GetVect (const char* cDataClass, const char* cName);
+    QList<KursUndDatum>& GetVect (const QString &cDataClass, const QString &cName);
 
     QMap<QString , QMap<QString,QString> >::iterator
         GetDataItBegin(){return mData.begin();};

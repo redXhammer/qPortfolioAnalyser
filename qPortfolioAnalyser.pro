@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     DepotPos.cpp \
+    FondStorage.cpp \
     datafile.cpp \
     depot.cpp \
     fond.cpp \
@@ -25,7 +26,8 @@ SOURCES += \
     kursunddatum.cpp \
     main.cpp \
     mainwindow.cpp \
-    polynom.cpp
+    polynom.cpp \
+    wsock.cpp
 
 HEADERS += \
     datafile.h \

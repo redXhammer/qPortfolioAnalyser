@@ -21,7 +21,7 @@ http::http()
     return;
 }
 
-http::http(const char* cAddr2) {
+http::http(const QString &cAddr2) {
 		cAddr = cAddr2;
 #ifndef LOWOUTPUT
     //cout << "Creating http with Host: "  << cAddr << endl;

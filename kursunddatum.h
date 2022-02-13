@@ -7,7 +7,7 @@ class KursUndDatum
 {
 public:
   KursUndDatum();
-  KursUndDatum& operator = (const KursUndDatum&);
+  KursUndDatum& operator= (const KursUndDatum&) = default;
 
 //private:
   double iKurs;

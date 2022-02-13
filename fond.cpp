@@ -23,19 +23,19 @@ QString fond::GetWknFileName()
     return sWkn;
 }
 
-fond::fond(const char* sWkn2) /***************** Konstructor der Fond-Klasse mit übergabe der WKN **************/
+fond::fond(const QString &sWkn2) /***************** Konstructor der Fond-Klasse mit übergabe der WKN **************/
 {
-    iKUD = 0;
-	sWknFileName = "fonddaten/";
+  iKUD = 0;
+  sWknFileName = "fonddaten/";
 
-	sWkn = sWkn2;
-	sWknFileName += sWkn;
-	sWknFileName += ".fdd";
+  sWkn = sWkn2;
+  sWknFileName += sWkn;
+  sWknFileName += ".fdd";
 #ifndef NOOUTPUT
-    qInfo() << "Datum der Fonddatei" << DateOfWkn();
+  qInfo() << "Datum der Fonddatei" << DateOfWkn();
 #endif
-    iStatus = 1;
-	return;
+  iStatus = 1;
+  return;
 }
 
 bool fond::LoadAllData()
@@ -359,7 +359,7 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
 	{
     ssUrl << "&min_time=" << DStart.toString();
   } else {
-    QDate dH = StrToDate("01.01.1990");
+    QDate dH = QDate::fromString("01.01.1990");
     ssUrl << "&min_time=" << dH.toString();
   }
 

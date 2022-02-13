@@ -225,7 +225,7 @@ double DepotPos::GetCurrentDepotWert(const QDate &cDatum)
 
 
 
-DepotPos* GetDepotClass(const char* cData) {
+DepotPos* GetDepotClass(const QString &cData) {
     //int iFondFound = -1;
 
 
