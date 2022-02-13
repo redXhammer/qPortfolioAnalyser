@@ -128,9 +128,9 @@ int fond::LoadFondAuss()
     //if (DateOfWkn() < iDateToday)
     {
         html hSite;
-        QString sUrlHistEig = "http://www.ariva.de";
+        QString sUrlHistEig = "https://www.ariva.de";
         sUrlHistEig += STsURL;
-        sUrlHistEig += "/historische_ereignisse";
+        sUrlHistEig += "/ausschuettungen/";
         hSite.open(sUrlHistEig);
 
         hSite.cdTotalDir("/html/body/div3/div2/div8/div/table");
@@ -266,7 +266,7 @@ int fond::DownloadFondData(QDate cdMax) {
     if (sBID.length() == 0)
     {
         html hSite;
-        QString cUrl =  "http://www.ariva.de";
+        QString cUrl =  "https://www.ariva.de";
         cUrl += STsURL;
         cUrl += "/historische_kurse";
         hSite.open(cUrl);
@@ -372,7 +372,7 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
 #ifndef LOWOUTPUT
     cout << "Connecting with " << cAddr << endl;
 #endif
-  if (cHttp.verbinden(cHttp.cAddr,80) != 0) return -1;
+  if (cHttp.verbinden(cHttp.cAddr,443) != 0) return -1;
 
     if (cHttp.SendGetRequest(cUrl) == false) return - 1;
 
@@ -504,7 +504,7 @@ double fond::GetCurrentAverage(const QDate &cDatum, int iTage)
 
 void fond::DownloadFundamental()
 {
-    QString cUrl =  "http://www.ariva.de";
+    QString cUrl =  "https://www.ariva.de";
     cUrl += STsURL;
     cUrl += "/bilanz-guv";
 
@@ -553,10 +553,8 @@ void fond::DownloadFundamental()
 
 bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
 {
-
-
-    QString cUrl =  "http://www.ariva.de/search/livesearch.m?searchname=";
-	cUrl += cSearch;
+    QString cUrl =  "https://www.ariva.de/search/livesearch.m?searchname=";
+    cUrl += cSearch;
 
     html hSite;
     hSite.open(cUrl);

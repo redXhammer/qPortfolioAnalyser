@@ -5,6 +5,7 @@
 #include <QBuffer>
 #include <QFile>
 #include <QTextStream>
+#include "http.h"
 
 /** @brief (one liner)
   *
@@ -88,27 +89,22 @@ int html::open(QString cLocation)
 
     qInfo() << "Opening: " << cLocation;
 
-    size_t abc = cLocation.compare("http");
-    if ( abc == 0)
+
+    if ( cLocation.startsWith("https") )
     {
-        //http://www.onvista.de/aktien/suche-vergleich/profi.html
-//        QString strHost = cLocation.mid(7);
-//        int iStartPath = strHost.indexOf('/');
-//        QString strPath = strHost.mid(iStartPath);
-//        strHost = strHost.left(iStartPath);
+        QString strHost = cLocation.mid(8); // automate this
+        int iStartPath = strHost.indexOf('/');
+        QString strPath = strHost.mid(iStartPath);
+        strHost = strHost.left(iStartPath);
 
-//        http httpVerbindung (strHost);
+        http httpVerbindung (strHost);
 
-//        if (httpVerbindung.SendGetRequest(strPath) != true)
-//            return -1;
+        if (httpVerbindung.SendGetRequest(strPath) != true)
+            return -1;
 
-//        sbString.sputn(httpVerbindung.sHttpData.c_str(),httpVerbindung.sHttpData.length());
-
-
-//        sBuf = &sbString;
-        sBuf = QByteArray(); //TODO: Correct this
+        sBuf = httpVerbindung.sHttpData.toUtf8();
     }
-    else if ((abc = cLocation.compare("file")) == 0)
+    else if ( cLocation.startsWith("file") )
     {
         fbFile.setFileName(cLocation.mid(7));
         if (!fbFile.open(QIODevice::ReadOnly)) return -1;
@@ -116,7 +112,7 @@ int html::open(QString cLocation)
     }
     else
     {
-        qInfo() << "Error Locationtyp not recognised";
+        qInfo().noquote() << "Error Locationtyp not recognised:" << cLocation;
         return -1;
     }
 

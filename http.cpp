@@ -422,7 +422,7 @@ bool http::SendGetRequest(const QString cUrl)
   //qInfo() << cUrl << endl;
   if (!SendAll(request))
     {
-        if (0 != verbinden(cAddr,80)) return false;
+        if (0 != verbinden(cAddr,443)) return false;
         if (!SendAll(request)) return false;
     }
     recv();
@@ -454,7 +454,7 @@ bool http::SendPostRequest(const QString cUrl, const QString cPost)
   //qInfo() << cUrl << endl;
   if (!SendAll(request))
   {
-    if (0 != verbinden(cAddr,80)) return false;
+    if (0 != verbinden(cAddr,443)) return false;
     if (!SendAll(request)) return false;
   }
   recv();
