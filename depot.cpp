@@ -107,19 +107,24 @@ bool Depot::LoadDepotFile (const QString &cFile)
                     sDepotData.remove(iPos,MAXINT32);
                 }
 
-                QString sDepotData2 = sDepotData;
-                sDepotData2.remove(0,8);
-                sDepotData.remove(9,MAXINT32);
+
+
                 if(pcDepot != 0)
                 {
-                    QDate dT = QDate::fromString(sDepotData,QString("dd.MM.yy"));
-                    bool bOK;
-                    double val = sDepotData2.toFloat(&bOK);
-                    if (!bOK)
+                    QString sDepotData2;
+
+                    QTextStream ssDepotData(&sDepotData);
+                    double val;
+                    ssDepotData >> sDepotData2 >> val;
+
+                    QDate dT = QDate::fromString(sDepotData2,QString("dd.MM.yyyy"));
+
+                    if (ssDepotData.status() != QTextStream::Ok)
                     {
-                        qWarning() << "Did not correctly process line";
+                        qWarning() << "Did not correctly process line" << sDepotData;
                         continue;
                     }
+
                     if ((!cDateBegin.isValid()) || (cDateBegin > dT))
                     {
                         cDateBegin = dT;
@@ -183,32 +188,38 @@ QString Depot::ShowDepotGesamtWert(const QDate &cDateOfW) {
     QString strText;
     QTextStream streamText(&strText,QIODevice::WriteOnly);
 
-    streamText << "Entwicklung vom " << cDateBegin.toString() << " bis zum " << cDateOfW.toString();
+    streamText << "Entwicklung vom " << cDateBegin.toString() << " bis zum " << cDateOfW.toString()  << endl ;
 
-    streamText << '|' << qSetFieldWidth( 10 ) << "DepotPos" <<'|' << qSetFieldWidth( 10 ) << "Anteile" <<'|' << qSetFieldWidth( 10 ) << "Wert"  <<'|' <<
-                  qSetFieldWidth( 10 ) << "+- Monat"  <<'|' << "+- Gesamt"  <<'|' << " Zins " << '|' ;
+    streamText << '|' ;
+    streamText << qSetFieldWidth( 10 ) << "DepotPos"  << qSetFieldWidth( 0 ) <<'|'
+               << qSetFieldWidth( 10 ) << "Anteile"   << qSetFieldWidth( 0 ) <<'|'
+               << qSetFieldWidth( 10 ) << "Wert"      << qSetFieldWidth( 0 ) <<'|'
+               << qSetFieldWidth( 10 ) << "+- Monat"  << qSetFieldWidth( 0 ) <<'|'
+               << qSetFieldWidth( 10 ) << "+- Gesamt" << qSetFieldWidth( 0 ) <<'|'
+               << qSetFieldWidth( 10 ) << " Zins "    << qSetFieldWidth( 0 ) <<'|'  << endl ;
+
     QList<DepotPos*>::const_iterator idDepot;
     for (idDepot = begin(); idDepot != end();idDepot++)
     {
         dWertGesammt += (*idDepot)->GetCurrentDepotWert(cDateOfW);
-        streamText << '|' << qSetFieldWidth( 10 ) << (*idDepot)->iDepotNr << '|';
-        streamText << fixed;
-        streamText << qSetRealNumberPrecision(4);
-        streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetCurrentFondAnt(cDateOfW).iAnteile <<'|';
-        streamText << fixed;
-        streamText << qSetRealNumberPrecision(2);
-        streamText << qSetFieldWidth( 10 ) <<  (*idDepot)->GetCurrentDepotWert(cDateOfW) <<'|' ;
         dWert31 = (*idDepot)->GetCurrentTrend(cDateOfW.addDays(-31), cDateOfW);
         dWertGes31 += dWert31;
-        streamText << qSetFieldWidth( 10 ) <<  dWert31 <<'|' ;
         dWertStart = (*idDepot)->GetCurrentTrend(cDateBegin,cDateOfW);
         dWertGesStart += dWertStart;
-        streamText << qSetFieldWidth( 10 ) <<  dWertStart <<'|' ;
-        streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetDepotGrowth(cDateBegin,cDateOfW)  <<'|' ;
-        streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetFondGrowth (cDateBegin,cDateOfW)  <<'|' ;
+
+        streamText << qSetFieldWidth( 0 ) << '|';
+        streamText << qSetFieldWidth( 10 ) << (*idDepot)->iDepotNr <<                              qSetFieldWidth( 0 ) <<'|';
+        streamText << qSetRealNumberPrecision(4) << fixed;
+        streamText << qSetFieldWidth( 10 ) << (*idDepot)->GetCurrentFondAnt(cDateOfW).iAnteile <<  qSetFieldWidth( 0 ) <<'|';
+        streamText << qSetRealNumberPrecision(2);
+        streamText << qSetFieldWidth( 10 )  << (*idDepot)->GetCurrentDepotWert(cDateOfW) <<        qSetFieldWidth( 0 ) <<'|' ;
+        streamText << qSetFieldWidth( 10 )  << dWert31 <<                                          qSetFieldWidth( 0 ) <<'|' ;
+        streamText << qSetFieldWidth( 10 )  << dWertStart <<                                       qSetFieldWidth( 0 ) <<'|' ;
+        streamText << qSetFieldWidth( 10 )  << (*idDepot)->GetDepotGrowth(cDateBegin,cDateOfW)  << qSetFieldWidth( 0 ) <<'|' ;
+        streamText << qSetFieldWidth( 10 )  << (*idDepot)->GetFondGrowth (cDateBegin,cDateOfW)  << qSetFieldWidth( 0 ) <<'|' << endl;
 
     }
-    streamText <<   qSetFieldWidth( 33 ) << dWertGesammt <<   /*qSetFieldWidth( 11 ) << dWertGes7 <<*/   qSetFieldWidth( 11 ) << dWertGes31  <<    qSetFieldWidth( 11 ) <<  dWertGesStart << qSetFieldWidth( 11 ) <<  CalculateZins(cDateBegin,cDateOfW) ;
+    streamText << qSetFieldWidth( 33 ) << dWertGesammt <<   /*qSetFieldWidth( 11 ) << dWertGes7 <<*/   qSetFieldWidth( 11 ) << dWertGes31  <<    qSetFieldWidth( 11 ) <<  dWertGesStart << qSetFieldWidth( 11 ) <<  CalculateZins(cDateBegin,cDateOfW) << endl;
     return strText;
 }
 

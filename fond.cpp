@@ -15,7 +15,7 @@ typedef unsigned long DWORD;
 
 QDate fond::DateOfWkn()
 {
-    return QDate::fromString(WknFile.GetData("Fond","LastUpdate"));
+    return QDate::fromString(WknFile.GetData("Fond","LastUpdate"),"dd.MM.yyyy");
 }
 
 QString fond::GetWknFileName()
@@ -31,6 +31,7 @@ fond::fond(const QString &sWkn2) /***************** Konstructor der Fond-Klasse 
     sWkn = sWkn2;
     sWknFileName += sWkn;
     sWknFileName += ".fdd";
+    WknFile.open( sWknFileName ); // Öffnen der WKN file
 #ifndef NOOUTPUT
     qInfo() << "Datum der Fonddatei" << DateOfWkn();
 #endif
@@ -40,6 +41,12 @@ fond::fond(const QString &sWkn2) /***************** Konstructor der Fond-Klasse 
 
 bool fond::LoadAllData()
 {
+    cSecu = WknFile.GetData("Fond","SECU");
+    STsURL = WknFile.GetData ("Fond","URL") ;
+
+    qInfo() << "Loaded Secu:" << cSecu << "Url:" << STsURL;
+
+
     if (cSecu.length() == 0 || STsURL.length() == 0)
     {
         if (GetSecu(sWkn,cSecu,STsURL) == false)
@@ -55,14 +62,23 @@ bool fond::LoadAllData()
         }
     }
 
-    WknFile.open( sWknFileName ); // Öffnen der WKN file
-    if (LoadFondKurse() < 1)
+    int newKurse;
+    if ((newKurse = LoadFondKurse()) < 1)
     {
         WknFile.DropData();
         return false;
     }
 
     LoadFondAuss();
+
+    if (newKurse > 0)
+    {
+#ifndef NOOUTPUT
+        qInfo() << "Speichern : " << SaveFondData() << " Einträge";
+#else
+        SaveFondData();
+#endif
+    }
 
     return true;
 }
@@ -74,18 +90,16 @@ int fond::LoadFondKurse()
     QList<KursUndDatum> vKurse = WknFile.GetVect("Fond","Kurse");
     if (vKurse.size() == 0)
     {
-        qInfo() << "No File Opened";
-        DownloadFondData();
-        qInfo() << "Speichern : " << SaveFondData() << " Einträge";
-
+        qInfo() << "No old kurse";
         iKUD = 0;
         iStatus = 0;
-        return dqKUD.size();
+        return DownloadFondData();
     }
 
     kudHelp = vKurse.at(0);
 
-    if ((DateOfWkn() < (iDateToday)) || AKTUALISIEREN) /************** Beginn des Aktualisierungsprozess *************/
+    QDate dateOfData = DateOfWkn();
+    if (dateOfData.isNull() || (dateOfData < iDateToday) || AKTUALISIEREN) /************** Beginn des Aktualisierungsprozess *************/
     {
 #ifndef NOOUTPUT
         qInfo() << "Datum des letzen lokalen Fondeintrags: " << kudHelp.cDatum;
@@ -101,11 +115,7 @@ int fond::LoadFondKurse()
 
         dqKUD.append(vKurse);
 
-#ifndef NOOUTPUT
-        qInfo() << "Speichern : " << SaveFondData() << " Einträge";
-#else
-        SaveFondData();
-#endif
+
     } else {
 #ifndef NOOUTPUT
         qInfo() <<"First: " << kudHelp.cDatum << " "<< kudHelp.iKurs;
@@ -125,100 +135,136 @@ int fond::LoadFondKurse()
 int fond::LoadFondAuss()
 {
 
-    //if (DateOfWkn() < iDateToday)
+
+
+    QDate dateOfData = DateOfWkn();
+    if (dateOfData.isNull() || (dateOfData < iDateToday))
     {
-        html hSite;
-        QString sUrlHistEig = "https://www.ariva.de";
-        sUrlHistEig += STsURL;
-        sUrlHistEig += "/ausschuettungen/";
-        hSite.open(sUrlHistEig);
-
-        if (!hSite.cdTotalDir("/html/body/div1/div2/div9/div/div2/div5/div/table"))
-        {
-            qInfo() << "===============PrintChildNodes==================";
-            hSite.PrintChildNodes();
-            qInfo() << "=======End=====PrintChildNodes==================";
-            return -1;
-        }
-
-        QVector<HtmlNode*> vhnTR = hSite.hCurrentNode->GetElementsByName("tr");
-
-        for (int iElem = 1; iElem < vhnTR.size(); iElem++)
-        {
-            HtmlNode* hnNode = vhnTR[iElem];
-
-            if (QString("Dividende") == hnNode->GetElementsByName("td")[1]->vectHtmlChildNode[0]->sName)
-            {
-                if (hnNode->GetElementsByName("td")[3]->vectHtmlChildNode.size() == 0) continue;
-
-
-
-
-                KursUndDatum kudAuss;
-                int iPosRev = hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName.lastIndexOf(',');
-
-                double dAussWert = hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName.replace(iPosRev,1,".").toDouble(/*&bOK*/) ;
-
-                kudAuss.cDatum = QDate::fromString(hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName); // - 1;
-                double dCurrWert = GetCurrentWert(kudAuss.cDatum);
-
-
-                kudAuss.iKurs = 1;
-                kudAuss.iKurs += dAussWert/GetCurrentWert(kudAuss.cDatum);
-
-                qInfo() << "Divi am " << hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName
-                        << " mit "    << hnNode->GetElementsByName("td")[3]->vectHtmlChildNode[0]->sName
-                        << " Euro ("  << dAussWert<< "," << dCurrWert
-                        << ") ("      << kudAuss.iKurs << ")";
-
-                if (dCurrWert == 0) continue;
-
-                if (dqAusschuettung.size()>0) {
-                    kudAuss.iKurs *= (dqAusschuettung.back().iKurs);
-                }
-
-                dqAusschuettung.push_back(kudAuss);
-                itAussHigh = dqAusschuettung.begin();
-                itAussLow = itAussHigh;
-                itAussHigh++;
-            }
-
-            else if (QString("Split") == hnNode->GetElementsByName("td")[1]->vectHtmlChildNode[0]->sName)
-            {
-                KursUndDatum kudAuss;
-
-                QString sVerh = hnNode->GetElementsByName("td")[2]->vectHtmlChildNode[0]->sName;
-                int iPos = sVerh.indexOf(":");
-
-                kudAuss.cDatum = QDate::fromString(hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName); // - 1;
-
-                //kudAuss.iKurs = 0;
-                kudAuss.iKurs = sVerh.mid(iPos+1).toDouble(/*&bOK*/) / sVerh.mid(0,iPos).toDouble(/*&bOK*/);
-
-                if (dqAusschuettung.size()>0) {
-                    kudAuss.iKurs *= (dqAusschuettung.back().iKurs);
-                }
-
-
-                qInfo() << "Split am "        << hnNode->GetElementsByName("td")[0]->vectHtmlChildNode[0]->sName
-                        << " mit Verhältnis " << hnNode->GetElementsByName("td")[2]->vectHtmlChildNode[0]->sName
-                        << " ("               << kudAuss.iKurs << ")";
-
-                dqAusschuettung.push_back(kudAuss);
-                itAussHigh = dqAusschuettung.begin();
-                itAussLow = itAussHigh;
-                itAussHigh++;
-            }
-        }
+        dqAusschuettung = DownloadFondAuss();
     }
+    else
+    {
+        dqAusschuettung = WknFile.GetVect("Fond","Auss");
+    }
+
+    itAussHigh = dqAusschuettung.begin();
+    itAussLow = itAussHigh;
+    itAussHigh++;
+
     return 0;
 }
 
 QList<KursUndDatum> fond::DownloadFondAuss()
 {
     QList<KursUndDatum> dqAuss;
-    cSecu = WknFile.GetData("Fond","SECU") ;
+    html hSite;
+    QString sUrlHistEig = "https://www.ariva.de";
+    sUrlHistEig += STsURL;
+    sUrlHistEig += "/ausschuettungen/";
+    hSite.open(sUrlHistEig);
 
+    if (!hSite.cdTotalDir("/html/body/div1/div2/div9/div/div2/div5/div/table"))
+    {
+        qInfo() << "===============PrintChildNodes==================";
+        hSite.PrintChildNodes();
+        qInfo() << "=======End=====PrintChildNodes==================";
+        return dqAuss;
+    }
+
+    //hSite.PrintChildNodes(*hSite.hCurrentNode,true,0);
+
+    QVector<HtmlNode*> vhnTR = hSite.hCurrentNode->GetElementsByName("tr");
+
+    for (int iElem = 1; iElem < vhnTR.size(); iElem++)
+    {
+        /*
+         * tr
+         *  |-td
+         *  | |-16.11.21
+         *  |-td
+         *  | |-Ausschüttung
+         *  |-td
+         *  | |-&nbsp;
+         *  |-td
+         *  | |-1,2 EUR
+         *  |-td
+         * -tr
+         * tr
+         *  |-td
+         *  | |-25.11.20
+         * ...
+         **/
+
+        HtmlNode* hnNode = vhnTR[iElem];
+        QVector<HtmlNode*> listTd = hnNode->GetElementsByName("td");
+
+        if (listTd.size() < 4) continue;
+
+        QString strDate = listTd[0]->vectHtmlChildNode[0]->sName;
+        QString strType = listTd[1]->vectHtmlChildNode[0]->sName;
+
+
+        //qInfo() << strType;
+
+        if (QString("Dividende") == strType || QString("Ausschüttung") == strType)
+        {
+            if (listTd[3]->vectHtmlChildNode.size() == 0) continue;
+            QString strBetrag = listTd[3]->vectHtmlChildNode[0]->sName;
+
+            KursUndDatum kudAuss;
+            strBetrag = strBetrag.remove(" EUR");
+            int iPosRev = strBetrag.lastIndexOf(',');
+
+            double dAussWert = strBetrag.replace(iPosRev,1,".").toDouble(/*&bOK*/) ;
+
+            kudAuss.cDatum = QDate::fromString(strDate,"dd.MM.yy");
+            if (kudAuss.cDatum.year() < 1980)
+                kudAuss.cDatum = kudAuss.cDatum.addYears(100);
+
+
+            double dCurrWert = GetCurrentWert(kudAuss.cDatum);
+
+
+            kudAuss.iKurs = 1;
+            kudAuss.iKurs += dAussWert/GetCurrentWert(kudAuss.cDatum);
+
+            qInfo() << "Divi am " << strDate
+                    << " mit "    << strBetrag
+                    << " Euro ("  << dAussWert<< "," << dCurrWert
+                    << ") ("      << kudAuss.iKurs << ")";
+
+            if (dCurrWert == 0) continue;
+
+            if (dqAuss.size()>0) {
+                kudAuss.iKurs *= (dqAuss.back().iKurs);
+            }
+
+            dqAuss.push_back(kudAuss);
+        }
+
+        else if (QString("Split") == strType)
+        {
+            KursUndDatum kudAuss;
+
+            QString sVerh = listTd[2]->vectHtmlChildNode[0]->sName;
+            int iPos = sVerh.indexOf(":");
+
+            kudAuss.cDatum = QDate::fromString(strDate,"dd.MM.yy");
+
+            //kudAuss.iKurs = 0;
+            kudAuss.iKurs = sVerh.mid(iPos+1).toDouble(/*&bOK*/) / sVerh.mid(0,iPos).toDouble(/*&bOK*/);
+
+            if (dqAuss.size()>0) {
+                kudAuss.iKurs *= (dqAuss.back().iKurs);
+            }
+
+            qInfo() << "Split am "        << strDate
+                    << " mit Verhältnis " << listTd[2]->vectHtmlChildNode[0]->sName
+                    << " ("               << kudAuss.iKurs << ")";
+
+            dqAuss.push_back(kudAuss);
+        }
+    }
 
     return dqAuss;
 }
@@ -229,19 +275,35 @@ QList<KursUndDatum> fond::DownloadFondAuss()
 int fond::SaveFondData()
 {
     int iSaveCount = 0;
-    //std::fstream oFile(sWknFileName.c_str(),ios::out);		// Speichern der Daten
-    QList<KursUndDatum> &lkudOldVect = WknFile.GetVect("Fond","Kurse");
 
+    //Update Kurse
+    QList<KursUndDatum> &lkudOldKurse = WknFile.GetVect("Fond","Kurse");
+    lkudOldKurse.clear();
     QList<KursUndDatum>::iterator vIt(dqKUD.begin());  // Iterator am Anfang des Vektors
     for (;vIt != dqKUD.end(); vIt++)
     {
         if ((*vIt).cDatum.isValid())
         {
-            lkudOldVect.append(*vIt) ;
+            lkudOldKurse.append(*vIt) ;
             iSaveCount++;
         }
     }
-    WknFile.AddData("Fond","LastUpdate",iDateToday.toString());
+
+    //Update Auss
+    QList<KursUndDatum> &lkudOldAuss = WknFile.GetVect("Fond","Auss");
+    lkudOldAuss.clear();
+    vIt = dqAusschuettung.begin();  // Iterator am Anfang des Vektors
+    for (;vIt != dqAusschuettung.end(); vIt++)
+    {
+        if ((*vIt).cDatum.isValid())
+        {
+            lkudOldAuss.append(*vIt) ;
+            iSaveCount++;
+        }
+    }
+
+
+    WknFile.AddData("Fond","LastUpdate",iDateToday.toString("dd.MM.yyyy"));
     WknFile.save(sWknFileName);
 #ifndef LOWOUTPUT
     qInfo() << "geschrieben";
@@ -261,68 +323,19 @@ int fond::DownloadFondData(QDate cdMax) {
 
     KursUndDatum kudKursUndDatum;
 
-
+    QString sBID = WknFile.GetData("Fond","BoerseID");
 
 #ifndef NOOUTPUT
-    qInfo() << "Erstelle Fondtabelle ...";
+    qInfo() << "Erstelle Fondtabelle mit BorseID" << sBID;
 #endif
 
-
-    QString sBID = WknFile.GetData("Fond","BoerseID");
     if (sBID.length() == 0)
     {
-        html hSite;
-        QString cUrl =  "https://www.ariva.de";
-        cUrl += STsURL;
-        cUrl += "/historische_kurse";
-        hSite.open(cUrl);
-        if (!hSite.cdTotalDir("/html/body/div3/div2/div8/div2/ul2"))
-        {
-            qInfo() << "===============PrintChildNodes==================";
-            hSite.PrintChildNodes();
-            qInfo() << "=======End=====PrintChildNodes==================";
-            return -1;
-        }
+        sBID = "131";
+        int iBID = sBID.toInt();
+        qInfo() << "Benutze: " << "Tradegate" << " (" << iBID << ")";
 
-        QVector<HtmlNode*> vhtmlnodeListTR;
-        QVector<HtmlNode*>::iterator itNodeFromList;
-        vhtmlnodeListTR = hSite.hCurrentNode->GetElementsByName("li");
-
-        int iAnz = 0;
-        QString sBID2 ;
-        QString sBoerse;
-
-        for (itNodeFromList = vhtmlnodeListTR.begin();
-             itNodeFromList != vhtmlnodeListTR.end();
-             itNodeFromList++)
-        {
-            HtmlNode* pNode = *itNodeFromList;
-            pNode = pNode->GetElementsByName("a")[0]; //a mit href -> BID
-            sBID = pNode->vectHtmlParams[0];
-
-            QString sNumData;
-            if (pNode->vectHtmlParams[1] == "class=\"bold")
-                sNumData = pNode->vectHtmlParams[5] ;
-            else
-                sNumData = pNode->vectHtmlParams[3] ;
-
-            if (iAnz < sNumData.mid(17).toInt(/* bOK */) )
-            {
-                size_t iPosBoerseId = sBID.lastIndexOf("boerse_id") + 10;
-                size_t iPosTueddel = sBID.lastIndexOf("\"");
-                sBID2 = sBID.mid(iPosBoerseId,iPosTueddel-iPosBoerseId);
-                iAnz = sNumData.mid(17).toDouble(/* bOK */);
-                pNode = pNode->vectHtmlChildNode[0]; // Name
-                sBoerse = pNode->sName;
-            }
-
-        }
-
-
-        int iBID = sBID2.toInt(/* bOK */);
-        qInfo() << "Benutze: " << sBoerse << " (" << iBID << ")";
-
-        WknFile.AddData("Fond","BoerseID",sBID2);
+        WknFile.AddData("Fond","BoerseID",sBID);
         if (DownloadData(cdMax, iDateToday,iBID) != 0) {iStatus = 2;return -1;}
     } else {
         int iBID = sBID.toInt(/* bOK */);
@@ -349,7 +362,7 @@ int fond::DownloadFondData(QDate cdMax) {
     if (iNewDataCount > 0) qInfo() << "aktuellstes Datum: " << dqKUD.at(0).cDatum;
 #endif
 
-    return 0;
+    return iNewDataCount;
 }
 
 
@@ -369,7 +382,7 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
 
     if (DStart.isValid())
     {
-        ssUrl << "&min_time=" << DStart.toString();
+        ssUrl << "&min_time=" << DStart.toString("d.M.yyyy");
     } else {
         QDate dH = QDate::fromString("01.01.1990");
         ssUrl << "&min_time=" << dH.toString("d.M.yyyy");
@@ -411,7 +424,6 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
 
 double fond::GetCurrentWert(const QDate& cDatum)
 {
-    //cout << "double fond::GetCurrentWert" << endl;
     int iCountStep = 0;
 
     if (iStatus == 1) if (LoadAllData() == false) return 0;
@@ -437,7 +449,7 @@ double fond::GetCurrentWert(const QDate& cDatum)
 
     }
 
-    while ((cDatum < dqKUD[iKUD+1].cDatum) && ((iKUD+1) < dqKUD.size()))
+    while ( ((iKUD+2) < dqKUD.size()) && (cDatum < dqKUD[iKUD+1].cDatum))
     {
         //itKUDlow++;
         //itKUDhigh++;
@@ -451,8 +463,10 @@ double fond::GetCurrentWert(const QDate& cDatum)
 
     if (dqKUD[iKUD+1].cDatum > cDatum)
     {
+        qWarning().noquote() << "Requested date ("<< cDatum << ") before start of historical data ("<< dqKUD[iKUD+1].cDatum << ")";
         return 0;
     }
+
     //cout << "With " <<  iCountStep << " Steps: " << itKUDhigh->cDatum << " " << itKUDhigh->iKurs << " for " << (Datum) cDatum << endl;
 
     return dqKUD[iKUD+1].iKurs;
@@ -471,7 +485,6 @@ double fond::GetAussFactor(const QDate& cDat)
 
     while (itAussLow->cDatum <= cDat)
     {
-
         if (itAussLow == dqAusschuettung.begin())
         {
             return 1;

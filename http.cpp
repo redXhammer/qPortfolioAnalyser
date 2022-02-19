@@ -7,7 +7,7 @@
 #include "QDebug"
 #include "QFile"
 
-//#define LOWOUTPUT
+#define LOWOUTPUT
 //#define _DEBUG
 //using namespace std;
 
@@ -362,7 +362,7 @@ int http::GetKagFondCount()
 
 int http::GetFondData(KursUndDatum &kud)
 {
-    QString cHelp;
+    QString cHelp, cDummy;
 
 
     do
@@ -376,15 +376,15 @@ int http::GetFondData(KursUndDatum &kud)
 
     QString date;
     ssLine >> date;
-    kud.cDatum = QDate::fromString(date);
+    kud.cDatum = QDate::fromString(date,"yyyy-MM-dd");
 
-    ssLine >> cHelp;
-    ssLine >> cHelp;
-    ssLine >> cHelp;
+    ssLine >> cDummy;
+    ssLine >> cDummy;
+    ssLine >> cDummy;
 
     ssLine >> kud.iKurs;
 
-    ssLine >> cHelp;
+    ssLine >> cDummy;
 
     return 0;
 }
@@ -399,30 +399,25 @@ int http::Empty()
 
 bool http::SendGetRequest(const QString url)
 {
-  cUrl = url;
-  QString request;
-  request = "GET ";
-  request += cUrl;
-  request += " HTTP/1.1\r\n";
-  request += "Host: ";
-  request += cAddr;
-  request += "\r\nConnection: close\r\n";
-  request += "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9) Gecko/2008052906 Firefox/3.0\r\n";
-  //request += "Accept-Encoding: gzip\r\n";
-  request += "Accept-Charset: ISO-8859-1,UTF-8;q=0.7,*;q=0.7\r\n";
-  request += "Cache-Control: no-cache\r\n";
-  request += "Accept-Language: de,en;q=0.7,en-us;q=0.3\r\n\r\n";
-
-
-
-
-
+    cUrl = url;
+    QString request;
+    request = "GET ";
+    request += cUrl;
+    request += " HTTP/1.1\r\n";
+    request += "Host: ";
+    request += cAddr;
+    request += "\r\nConnection: close\r\n";
+    request += "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9) Gecko/2008052906 Firefox/3.0\r\n";
+    //request += "Accept-Encoding: gzip\r\n";
+    request += "Accept-Charset: ISO-8859-1,UTF-8;q=0.7,*;q=0.7\r\n";
+    request += "Cache-Control: no-cache\r\n";
+    request += "Accept-Language: de,en;q=0.7,en-us;q=0.3\r\n\r\n";
 
 #ifndef LOWOUTPUT
-  qInfo() << request << endl;
+    qInfo() << request << endl;
 #endif
-  //qInfo() << cUrl << endl;
-  if (!SendAll(request))
+
+    if (!SendAll(request))
     {
         if (0 != verbinden(cAddr,443)) return false;
         if (!SendAll(request)) return false;

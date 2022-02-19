@@ -6,7 +6,7 @@
 
 QTextStream& operator<< (QTextStream& stream, const KursUndDatum &kud)
 {
-    stream << kud.cDatum.toString() << " " << kud.iKurs;
+    stream << kud.cDatum.toString("dd.MM.yyyy") << " " << kud.iKurs;
     return stream;
 }
 
@@ -14,7 +14,7 @@ QTextStream& operator>> (QTextStream& stream, KursUndDatum &kud)
 {
     QString date;
     stream >> date >> kud.iKurs;
-    kud.cDatum = QDate::fromString(date);
+    kud.cDatum = QDate::fromString(date,"dd.MM.yyyy");
     return stream;
 }
 
@@ -91,14 +91,15 @@ QTextStream& operator>> (QTextStream& stream, QList<T> &list)
 bool DataFile::open(const QString& cFileOpen)
 {  /****************** Datei öffnen, laden **************/
 #ifndef NOOUTPUT
-    qInfo() << "Try to open " << cFileOpen;
+
 #endif
     pFile.setFileName(cFileOpen);
     if (!pFile.open(QIODevice::ReadOnly))
     {
-        qInfo() << "It failed to load \"" << cFileOpen << "\"";
+        qInfo() << "It failed to load" << cFileOpen;
         return false;
     } else {
+        qInfo() << "Opened" << cFileOpen;
         QTextStream stream(&pFile);
         stream >> mData;
         stream >> mVect;

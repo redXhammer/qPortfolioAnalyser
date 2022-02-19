@@ -81,6 +81,15 @@ void HtmlNode::Search(const QString& search)
     {
         qInfo() << GetCurrentPath() << " : " << sName;
     }
+
+    foreach (QString param, vectHtmlParams) {
+        if (param.contains(search))
+        {
+            qInfo() << GetCurrentPath() << " : " << param << "(Parameter)";
+        }
+    }
+
+
     for (int i = 0;i < vectHtmlChildNode.size(); i++)
     {
         vectHtmlChildNode[i]->Search(search);
