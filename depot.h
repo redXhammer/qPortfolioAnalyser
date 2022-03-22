@@ -61,7 +61,7 @@ public:
   double GetCurrentTrend(const QDate &Start, const QDate &End);
   double GetDepotGrowth(const QDate& cdDatLow,const QDate &cdDatHigh);
   double GetFondGrowth(const QDate& cdDatLow,const QDate &cdDatHigh);
-
+  QString GetName() {return pFond->STsName;}
 
 private:
   QString sWKN;

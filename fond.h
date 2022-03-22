@@ -12,7 +12,7 @@
 
 #include "datafile.h"
 
-bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL);
+bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL, QString &sName);
 
 class fond
 {

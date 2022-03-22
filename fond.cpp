@@ -43,13 +43,14 @@ bool fond::LoadAllData()
 {
     cSecu = WknFile.GetData("Fond","SECU");
     STsURL = WknFile.GetData ("Fond","URL") ;
+    STsName = WknFile.GetData ("Fond","NAME") ;
 
-    qInfo() << "Loaded Secu:" << cSecu << "Url:" << STsURL;
 
+    qInfo() << STsName << "Loaded Secu:" << cSecu << "Url:" << STsURL;
 
-    if (cSecu.length() == 0 || STsURL.length() == 0)
+    if (cSecu.length() == 0 || STsURL.length() == 0 || STsName.length() == 0 )
     {
-        if (GetSecu(sWkn,cSecu,STsURL) == false)
+        if (GetSecu(sWkn,cSecu,STsURL,STsName) == false)
         {
             qInfo() << "Secu Error";
             iStatus = 2;
@@ -57,8 +58,9 @@ bool fond::LoadAllData()
         }
         else
         {
-            WknFile.AddData ("Fond","SECU",cSecu ) ;
-            WknFile.AddData ("Fond","URL",STsURL ) ;
+            WknFile.AddData ("Fond","SECU",cSecu  );
+            WknFile.AddData ("Fond","URL", STsURL );
+            WknFile.AddData ("Fond","NAME",STsName);
         }
     }
 
@@ -582,7 +584,7 @@ void fond::DownloadFundamental()
 
 
 
-bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
+bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL, QString &sName)
 {
     QString cUrl =  "https://www.ariva.de/search/livesearch.m?searchname=";
     cUrl += cSearch;
@@ -601,9 +603,10 @@ bool GetSecu(const QString cSearch, QString &sSecu, QString &sURL)
     QString sHelp = hSite.hCurrentNode->vectHtmlParams[2];
     sSecu = sHelp.mid(7,sHelp.size() - 8);
 
-    //Url
+    //Url & Name
     if (hSite.cdTotalDir("/div/table/tr/td1/a") == false) return false;
     sHelp =  hSite.hCurrentNode->vectHtmlParams[0];
+    sName =  hSite.hCurrentNode->vectHtmlChildNode[1]->sName;
     sURL = sHelp.mid(6,sHelp.size()-7);
     //sSecu = sURL;
     return true;
