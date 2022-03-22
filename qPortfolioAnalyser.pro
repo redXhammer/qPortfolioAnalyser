@@ -28,6 +28,7 @@ SOURCES += \
     kursunddatum.cpp \
     main.cpp \
     mainwindow.cpp \
+    plot.cpp \
     polynom.cpp \
     wsock.cpp
 
@@ -39,6 +40,7 @@ HEADERS += \
     http.h \
     kursunddatum.h \
     mainwindow.h \
+    plot.h \
     polynom.h
 
 # Default rules for deployment.
