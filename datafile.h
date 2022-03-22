@@ -15,6 +15,43 @@ typedef QMap<QString, QMap<QString,QString> >::iterator ITdblMAP;
 typedef QMap<QString, QMap<QString,QString> >           DBLmap;
 typedef QMap<QString, QString>::iterator                  ITmap;
 
+class MyTextStream : public QTextStream {
+public:
+  MyTextStream(QIODevice *device)       : QTextStream(device) {}
+  MyTextStream(FILE *fileHandle)        : QTextStream(fileHandle) {}
+  MyTextStream(QString *string)         : QTextStream(string) {}
+  MyTextStream(QByteArray *array)       : QTextStream(array) {}
+  MyTextStream(const QByteArray &array) : QTextStream(array) {}
+
+  MyTextStream& operator<< (const QString str);
+  MyTextStream& operator>> (QString &str);
+
+  MyTextStream& operator>> (char &c);
+
+  MyTextStream& operator<< (const int i);
+  MyTextStream& operator>> (int &i);
+
+
+  MyTextStream& operator<< (const double f);
+  MyTextStream& operator>> (double &f);
+
+  MyTextStream& operator<< (const KursUndDatum &kud);
+  MyTextStream& operator>> (KursUndDatum &kud);
+
+  template <class K, class T> MyTextStream& operator<< (const QMap<K, T> &map);
+  template <class K, class T> MyTextStream& operator>> (QMap<K, T> &map);
+
+  template <typename T>       MyTextStream& operator<< (const QList<T> &list);
+  template <typename T>       MyTextStream& operator>> (QList<T> &list);
+
+
+  QString readUntil(const QChar &sep, bool putback = false);
+  void putback(const QChar &chr);
+
+private:
+  QString backputchars;
+};
+
 class DataFile
 {
 private:

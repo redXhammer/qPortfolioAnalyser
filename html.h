@@ -51,37 +51,4 @@ class html //: public http
 
 };
 
-class MyTextStream : public QTextStream {
-public:
-  MyTextStream(FILE *fileHandle)        : QTextStream(fileHandle) {}
-  MyTextStream(QString *string)         : QTextStream(string) {}
-  MyTextStream(QByteArray *array)       : QTextStream(array) {}
-  MyTextStream(const QByteArray &array) : QTextStream(array) {}
-
-  QString readUntil(const QChar &sep, bool putback = false)
-  {
-    QChar ch;
-    QString str;
-    while (!atEnd()) {
-      QTextStream::operator >>(ch);
-      if (ch == sep) {
-        if (putback)
-          seek(pos()-1);
-        break;
-      }
-      str += ch;
-    }
-    return str;
-  }
-
-  void putback(const QChar &chr)
-  {
-    seek(pos()-1);
-    QTextStream::operator<<(chr);
-    seek(pos()-1);
-  }
-private:
-  QString backputchars;
-};
-
 #endif // HTML_H

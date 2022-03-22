@@ -4,8 +4,8 @@
 #include <QByteArray>
 #include <QBuffer>
 #include <QFile>
-#include <QTextStream>
 #include "http.h"
+#include "datafile.h"
 
 /** @brief (one liner)
   *

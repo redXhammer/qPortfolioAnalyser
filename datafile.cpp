@@ -4,88 +4,156 @@
 
 //int Level = 0;
 
-QTextStream& operator<< (QTextStream& stream, const KursUndDatum &kud)
+MyTextStream& MyTextStream::operator<< (const QString str)
 {
-    stream << kud.cDatum.toString("dd.MM.yyyy") << " " << kud.iKurs;
-    return stream;
+    QTextStream::operator<<(str);
+    return *this;
 }
 
-QTextStream& operator>> (QTextStream& stream, KursUndDatum &kud)
+MyTextStream& MyTextStream::operator>>(QString &str)
+{
+    str=readUntil('\n').trimmed();
+    return *this;
+}
+
+MyTextStream& MyTextStream::operator>>(char &c)
+{
+    QTextStream::operator>>(c);
+    return *this;
+}
+
+MyTextStream& MyTextStream::operator<<(const double f)
+{
+    QTextStream::operator<<(f);
+    return *this;
+}
+
+MyTextStream& MyTextStream::operator>>(double &f)
+{
+    QTextStream::operator>>(f);
+    return *this;
+}
+
+
+MyTextStream& MyTextStream::operator<< (const int i)
+{
+    QTextStream::operator<<(i);
+    return *this;
+}
+
+MyTextStream& MyTextStream::operator>> (int &i)
+{
+    QTextStream::operator>>(i);
+    return *this;
+}
+
+QString MyTextStream::readUntil(const QChar &sep, bool putback)
+{
+  QChar ch;
+  QString str;
+  while (!atEnd()) {
+    QTextStream::operator >>(ch);
+    if (ch == sep) {
+      if (putback)
+        seek(pos()-1);
+      break;
+    }
+    str += ch;
+  }
+  return str;
+}
+
+void MyTextStream::putback(const QChar &chr)
+{
+  seek(pos()-1);
+  QTextStream::operator<<(chr);
+  seek(pos()-1);
+}
+
+MyTextStream& MyTextStream::operator<< (const KursUndDatum &kud)
+{
+    *this << kud.cDatum.toString("dd.MM.yyyy") << " " << kud.iKurs;
+    return *this;
+}
+
+MyTextStream& MyTextStream::operator>> (KursUndDatum &kud)
 {
     QString date;
-    stream >> date >> kud.iKurs;
+    *static_cast<QTextStream*>(this) >> date;
     kud.cDatum = QDate::fromString(date,"dd.MM.yyyy");
-    return stream;
+    *this >> kud.iKurs;
+
+    return *this;
 }
 
 //QTextStream& operator<< (QTextStream& stream, )
-template <class KK, class TT>
-QTextStream& operator<< (QTextStream& stream, const QMap<KK, TT> &map)
+template <class K, class T>
+MyTextStream& MyTextStream::operator<< (const QMap<K, T> &map)
 {
-    stream << map.size() << endl;
+    *this << map.size() << endl;
 
-    typename QMap<KK, TT>::const_iterator it;
+    typename QMap<K, T>::const_iterator it;
     for (it = map.begin(); it != map.end(); it++)
     {
-        stream << it.key() << " " << it.value() << endl;
+        *this << it.key() << " " << it.value() << endl;
     }
-    return stream;
+    return *this;
 }
 
 template <class Key, class T>
-QTextStream& operator>> (QTextStream& stream, QMap<Key, T> &map)
+MyTextStream& MyTextStream::operator>> (QMap<Key, T> &map)
 {
-    if (stream.atEnd())
-      return stream;
+    if (this->atEnd())
+      return *this;
     int size;
-    stream >> size;
+    *this >> size;
     for (int i = 0; i < size; i++)
     {
       Key key;
       T t;
-      if (stream.atEnd())
-        return stream;
-      stream >> key;
-      if (stream.atEnd())
-        return stream;
-      stream >> t;
+      if (this->atEnd())
+        return *this;
+      *static_cast<QTextStream*>(this) >> key; //For QString don't read until eol
+      if (this->atEnd())
+        return *this;
+      *this >> t;
       map.insert(key, t);
     }
-    return stream;
+    return *this;
 }
 
 template <typename TT>
-QTextStream& operator<< (QTextStream& stream, const QList<TT> &list)
+MyTextStream& MyTextStream::operator<< (const QList<TT> &list)
 {
-    stream << list.size() << endl;
+    *this << list.size() << endl;
 
     typename QList<TT>::const_iterator it;
     for (it = list.begin(); it != list.end(); it++)
     {
-        stream << *it << endl;
+        *this << *it << endl;
     }
-    return stream;
+    return *this;
 }
 
 template <typename T>
-QTextStream& operator>> (QTextStream& stream, QList<T> &list)
+MyTextStream& MyTextStream::operator>> (QList<T> &list)
 {
-    if (stream.atEnd())
-      return stream;
+    if (this->atEnd())
+      return *this;
 
     int size;
-    stream >> size;
+    *this >> size;
     list.clear();
     list.reserve(size);
     for (int i = 0; i < size; i++)
     {
         T t;
-        if (stream.atEnd())
-          return stream;
-        stream >> t;
+        if (this->atEnd())
+          return *this;
+        *this >> t;
         list.push_back(t);
     }
-    return stream;
+    return *this;
 }
 
 bool DataFile::open(const QString& cFileOpen)
@@ -100,7 +168,7 @@ bool DataFile::open(const QString& cFileOpen)
         return false;
     } else {
         qInfo() << "Opened" << cFileOpen;
-        QTextStream stream(&pFile);
+        MyTextStream stream(&pFile);
         stream >> mData;
         stream >> mVect;
     }
@@ -116,7 +184,7 @@ bool DataFile::save(const QString &cFileOpen)
         qInfo() << "It failed, not saving";
         return false;
     } else {
-        QTextStream stream(&pFile);
+        MyTextStream stream(&pFile);
         stream << mData;
         stream << mVect;
     }
