@@ -57,7 +57,6 @@ void Plot::populate()
     for (;itList != m_depot->end();itList++)
     {
         if (*itList == nullptr) continue;
-        //if ((*itList)->iDepotNr == iAt) return *itList;
 
         // Insert new curves
         QwtPlotCurve *cSin = new QwtPlotCurve( (*itList)->GetName() );
@@ -65,25 +64,32 @@ void Plot::populate()
         cSin->setLegendAttribute( QwtPlotCurve::LegendShowLine, true );
         cSin->setPen( Qt::red );
         cSin->attach( this );
-        //cSin->setSamples()
-
-        QPolygonF points;
-        points << QPointF( 0.0, 4.4 ) << QPointF( 1.0, 3.0 )
-            << QPointF( 2.0, 4.5 ) << QPointF( 3.0, 6.8 )
-            << QPointF( 4.0, 7.9 ) << QPointF( 5.0, 7.1 );
-        cSin->setSamples( points );
-
-
+        cSin->setSamples(new DepotPosSamples(*itList,m_depot->cDateBegin));
     }
-
-
-
-
-
 
     //QwtPlotCurve *cCos = new QwtPlotCurve( "y = cos(x)" );
     //cCos->setRenderHint( QwtPlotItem::RenderAntialiased );
     //cCos->setLegendAttribute( QwtPlotCurve::LegendShowLine, true );
     //cCos->setPen( Qt::blue );
     //cCos->attach( this );
+}
+
+DepotPosSamples::DepotPosSamples(DepotPos* depotPos, QDate startDate) :
+    m_depotPos(depotPos), m_StartDate(startDate)
+{}
+
+size_t DepotPosSamples::size() const
+{
+    return m_StartDate.daysTo( QDate::currentDate() );
+}
+
+QPointF DepotPosSamples::sample( size_t i ) const
+{
+    QDateTime date = QDateTime(m_StartDate.addDays(i));
+    return QPointF(QwtDate::toDouble(date), m_depotPos->GetCurrentDepotWert(date.date()));
+}
+
+QRectF DepotPosSamples::boundingRect() const
+{
+    return qwtBoundingRect( *this );
 }

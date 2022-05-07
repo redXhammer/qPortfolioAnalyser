@@ -2,13 +2,15 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+class Depot;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(Depot* depot, QWidget *parent = nullptr);
     ~MainWindow();
 };
+
 #endif // MAINWINDOW_H
