@@ -99,6 +99,7 @@ int fond::LoadFondKurse()
     }
 
     kudHelp = vKurse.at(0);
+    int iNumNewKurse = 0;
 
     QDate dateOfData = DateOfWkn();
     if (dateOfData.isNull() || (dateOfData < iDateToday) || AKTUALISIEREN) /************** Beginn des Aktualisierungsprozess *************/
@@ -108,7 +109,7 @@ int fond::LoadFondKurse()
         qInfo() << "Aktualisiere ... ";
 #endif
 
-        DownloadFondData(kudHelp.cDatum);
+        iNumNewKurse = DownloadFondData(kudHelp.cDatum);
 
 #ifndef NOOUTPUT
         qInfo() << "Fertig";
@@ -119,26 +120,20 @@ int fond::LoadFondKurse()
 
 
     } else {
-#ifndef NOOUTPUT
-        qInfo() <<"First: " << kudHelp.cDatum << " "<< kudHelp.iKurs;
-#endif
         dqKUD.append(vKurse);
 #ifndef NOOUTPUT
-        kudHelp = dqKUD.back();
-        qInfo() <<"Last: " << kudHelp.cDatum << " "<< kudHelp.iKurs;
+        qInfo().noquote() << "Newest:" << kudHelp.cDatum.toString("d.M.yyyy") << kudHelp.iKurs
+                          << "Oldest:" << dqKUD.back().cDatum.toString("d.M.yyyy") << dqKUD.back().iKurs;
 #endif
     }
 
     iKUD = 0;
     iStatus = 0;
-    return dqKUD.size();
+    return iNumNewKurse;
 }
 
 int fond::LoadFondAuss()
 {
-
-
-
     QDate dateOfData = DateOfWkn();
     if (dateOfData.isNull() || (dateOfData < iDateToday))
     {
@@ -304,13 +299,8 @@ int fond::SaveFondData()
         }
     }
 
-
     WknFile.AddData("Fond","LastUpdate",iDateToday.toString("dd.MM.yyyy"));
     WknFile.save(sWknFileName);
-#ifndef LOWOUTPUT
-    qInfo() << "geschrieben";
-#endif
-
     return iSaveCount;
 }
 

@@ -12,17 +12,14 @@ fond * FondStorage::GetFondClass(const QString &wkn)
     itFondMap = find(wkn);
     if (itFondMap == end())
     {
-        qInfo() << "Cannot find " << wkn;
         pF = AddFond(wkn);
-        pF->LoadAllData();
-        return pF;
     }
     else{
         pF = itFondMap.value();
-        qInfo() << "Loading Data for " << pF->STsName;
-        pF->LoadAllData();
-        return pF;
     }
+    pF->LoadAllData();
+    qInfo().noquote() << "Updated Data for" << wkn << pF->STsName;
+    return pF;
 }
 
 /** @brief (one liner)

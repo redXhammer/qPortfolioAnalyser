@@ -150,8 +150,9 @@ int wsock::verbinden(const QString &cAddr, int iPort)
     log_ssl();
     return -1;
   }
+#ifndef LOWOUTPUT
   qInfo() << "SSL connection using" << SSL_get_cipher (ssl);
-
+#endif
 
   iStatus = WStatConected;
   bError = false;

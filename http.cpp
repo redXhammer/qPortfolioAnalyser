@@ -560,12 +560,10 @@ int http::recv()
         GetLine(firstLine);
         firstLine >> Protokoll;
         firstLine >> code;
-        //if(code == 100)
-        //{
-        //    GetLine(firstLine); // Leere Zeile nach Continue ignorieren
-        //}
     }
+#ifndef LOWOUTPUT
     qInfo() << "Protokoll: " << Protokoll;
+#endif
     iLastStatusResponse = code;
 
     if(code != 200)
@@ -625,14 +623,17 @@ int http::recv()
             recvSize += bytesRecv;
             http_data += data_shunk;
         }
-
+#ifndef LOWOUTPUT
         qInfo() << "Downloading... " << recvSize << "of" << size;
+#endif
     }
     else
     {
         if(!chunked)
         {
+#ifndef LOWOUTPUT
             qInfo() << "Downloading... (Unknown Filesize)" << endl;
+#endif
             while(bytesRecv != 0) // Wenn recv 0 zurück gibt, wurde die Verbindung beendet
             {
                 QByteArray data_shunk;
@@ -645,7 +646,9 @@ int http::recv()
         }
         else
         {
+#ifndef LOWOUTPUT
             qInfo() << "Downloading... (Chunked)" << endl;
+#endif
             while(true)
             {
                 bool bOK;
@@ -670,12 +673,12 @@ int http::recv()
                     break;
                 }
 
-                if(chunkSize <= 0)
-                {
-                    qInfo() << "Finished:" << chunkSize;
+                if(chunkSize <= 0) //Done
                     break;
-                }
+
+#ifndef LOWOUTPUT
                 qInfo() << "Downloading Part (" << chunkSize << " Bytes)... ";
+#endif
                 recvSize = 0; // Vor jeder Schleife wieder auf 0 setzen
                 while(recvSize < chunkSize)
                 {
@@ -694,26 +697,18 @@ int http::recv()
                     http_data += data_shunk;
 //                   qInfo() << "\r" << recvSize * 100 / chunkSize << "%" << flush;
                 }
-//                qInfo() << endl;
-//                for(int i = 0; i < 2; ++i)
-//                {
-//                    char temp;
-//                    ::recv(s, &temp, 1, 0); //Nessesary?????
-//                }
             }
         }
     }
-//    qInfo() << endl << "Finished!" << endl;
+
     sHttpData = QString::fromUtf8(http_data);
-
-
 
     //ReplaceEveryThing(">","<|||\r\n");
     //ReplaceEveryThing("<|||",">");
 
-//#if defined (_DEBUG) && defined (_CONSOLE)
+#ifndef LOWOUTPUT
     qInfo() << "Writing response to:" << cUrl;
-
+#endif
 
     QFile oFile(cUrl.remove('/').remove('\\'));
     if(!oFile.open(QIODevice::WriteOnly)) {
@@ -721,13 +716,11 @@ int http::recv()
     }
     oFile.write(sHttpData.toUtf8());
     oFile.close();
-//#endif
 
-#if defined (_DEBUG) && defined (_CONSOLE) && !defined (NOOUTPUT)
-  if (sHttpData.length() != iLenGes) qInfo() << "Recv Error: sRecvData.length(): " << sHttpData.length() << " und \"iLenGes:\" " << iLenGes << endl;
-  else qInfo() << "Download Complete. Bytes: " << iLenGes << endl;;
+#if !defined (NOOUTPUT)
+    qInfo() << "Download Complete. Bytes: " << http_data.length() << endl;;
 #endif
-	return iLenGes;
+    return http_data.length();
 }
 
 

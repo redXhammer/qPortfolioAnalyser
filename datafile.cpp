@@ -178,7 +178,6 @@ bool DataFile::open(const QString& cFileOpen)
 
 bool DataFile::save(const QString &cFileOpen)
 {  /****************** Datei öffnen, speichern **************/
-    qInfo() << "Try to open " << cFileOpen;
     pFile.setFileName(cFileOpen);
     if (!pFile.open(QIODevice::WriteOnly))	{	// geöffnet ?
         qInfo() << "It failed, not saving";
