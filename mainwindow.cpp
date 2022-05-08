@@ -2,7 +2,7 @@
 #include "plot.h"
 #include "QHBoxLayout"
 #include "QDockWidget"
-#include <depot.h>
+#include "depot.h"
 
 MainWindow::MainWindow(Depot *depot, QWidget *parent)
     : QMainWindow(parent)

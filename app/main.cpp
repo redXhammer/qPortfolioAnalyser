@@ -1,9 +1,9 @@
-#include "mainwindow.h"
+#include "../mainwindow.h"
 
 #include <QApplication>
 #include <QDebug>
 #include "openssl/ssl.h"
-#include "depot.h"
+#include "../depot.h"
 
 
 int main(int argc, char *argv[])

@@ -104,8 +104,6 @@ public:
   void SetAddr(const QString & Addr){cAddr = Addr;return;}
   const QString GetAddr(){return cAddr;}
 
-  int GetFondData(KursUndDatum &kud) ;
-
   int GetKagFondCount();
 
   int Empty() ;

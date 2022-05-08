@@ -7,7 +7,7 @@
 #include <qwt_plot_magnifier.h>
 #include <qwt_date_scale_draw.h>
 #include <qwt_date_scale_engine.h>
-#include <depot.h>
+#include "depot.h"
 
 Plot::Plot(Depot *depot, QWidget *parent ):
     QwtPlot( parent ), m_depot(depot)

@@ -6,6 +6,7 @@
 #include "QTextStream"
 #include "QDebug"
 #include "QFile"
+#include "helper.h"
 
 #define LOWOUTPUT
 //#define _DEBUG
@@ -356,37 +357,6 @@ int http::GetKagFondCount()
     iFondCountBegin = cFondCount.indexOf(" ");
     cFondCount.remove(iFondCountBegin); //add end
     return cFondCount.toInt();
-}
-
-
-
-int http::GetFondData(KursUndDatum &kud)
-{
-    QString cHelp, cDummy;
-
-
-    do
-    {
-        if ( ssFondData.atEnd() ) return -1;
-        cHelp = ssFondData.readLine();
-    }
-    while(cHelp.size() == 0);
-
-    QTextStream ssLine(&cHelp);
-
-    QString date;
-    ssLine >> date;
-    kud.cDatum = QDate::fromString(date,"yyyy-MM-dd");
-
-    ssLine >> cDummy;
-    ssLine >> cDummy;
-    ssLine >> cDummy;
-
-    ssLine >> kud.iKurs;
-
-    ssLine >> cDummy;
-
-    return 0;
 }
 
 int http::Empty()

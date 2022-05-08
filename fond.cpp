@@ -334,10 +334,32 @@ int fond::DownloadFondData(QDate cdMax) {
         if (DownloadData(cdMax, iDateToday,iBID) != 0) {iStatus = 2;return -1;}
     }
 
+    QStringList strlData;
+    if (!readCSVRow(cHttp.ssFondData, &strlData))
+      return -1;
 
+    QLocale german(QLocale::German);
 
-    while(cHttp.GetFondData(kudKursUndDatum) == 0)
+    while(!cHttp.ssFondData.atEnd())
     {
+        if (!readCSVRow(cHttp.ssFondData, &strlData))
+          break;
+
+        if (strlData.size() < 5)
+          break;
+
+        kudKursUndDatum.cDatum = QDate::fromString(strlData[0],"yyyy-MM-dd");
+
+        //ssLine >> cDummy; [1]
+        //ssLine >> cDummy; [2]
+        //ssLine >> cDummy; [3]
+
+        bool bOK = true;
+        kudKursUndDatum.iKurs = german.toDouble(strlData[4], &bOK);
+
+        if (!bOK)
+            break;
+
         if (cdMax.isValid() && (cdMax >= kudKursUndDatum.cDatum))
         {
             break;
@@ -392,16 +414,6 @@ int fond::DownloadData(QDate DStart, QDate DEnd, int iBoerseID, bool bClean_Spli
     if (cHttp.verbinden(cHttp.cAddr,443) != 0) return -1;
 
     if (cHttp.SendGetRequest(cUrl) == false) return - 1;
-
-
-
-    cHttp.ReplaceEveryThing (" " ,"X");
-    cHttp.ReplaceEveryThing (";" ," ");
-    cHttp.DeleteUntil("Volumen");
-    cHttp.DeleteEveryThing(".");
-    cHttp.ReplaceEveryThing(",",".");
-
-
 
     if (cHttp.sHttpData.length() > 0)
     {
