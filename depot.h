@@ -112,9 +112,6 @@ public:
 
   double CalculateZins(const QDate& ,const QDate &);
 
-
-  DepotPos* operator [] (const int &);
-
   //void ShowDepotGesamtWertHeute(const Datum &);
   QString ShowDepotGesamtWert(const QDate &);
   double GetCurrentDSTrend(const QDate &, const QDate &);

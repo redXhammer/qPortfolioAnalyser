@@ -144,9 +144,22 @@ int wsock::verbinden(const QString &cAddr, int iPort)
   }
 
   SSL_set_fd(ssl, s);
+
+  SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, (void*)cAddr.toUtf8().data());
+
   int err = SSL_connect(ssl);
   if (err <= 0) {
-    qWarning("Error creating SSL connection.  err=%x", err);
+    int sslError = SSL_get_error(ssl, err);
+    qWarning("Error creating SSL connection.  err=%x, sslErr=%x", err, sslError);
+
+    switch (sslError)
+    {
+    case SSL_ERROR_SSL:
+      qWarning("SSL error: possible protocol error, or other SSL error\n");
+      break;
+    }
+
+
     log_ssl();
     return -1;
   }

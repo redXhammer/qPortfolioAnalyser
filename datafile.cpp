@@ -202,16 +202,7 @@ bool DataFile::AddData(const QString& cDataClass, const QString& cName, const QS
 
 QString DataFile::GetData(const QString &cDataClass, const QString &cName)
 {
-    ITdblMAP itDataMarker = mData.find(cDataClass);
-    if (itDataMarker != mData.end())
-    {
-        ITmap itKeyMarker = itDataMarker.value().find(cName);
-        if (itKeyMarker != itDataMarker.value().end())
-        {
-            return itKeyMarker.value();
-        }
-    }
-    return "";
+    return GetData(mData.find(cDataClass),cName);
 }
 
 QString DataFile::GetData(ITdblMAP itDataClass, const QString &cName)

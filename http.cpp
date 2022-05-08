@@ -516,7 +516,6 @@ int http::recv(QString &sRecvData)
 
 int http::recv()
 {
-    int iLenGes  = -1;
     bool chunked = false;
     const int noSizeGiven = -1;
     int size = noSizeGiven;
@@ -677,15 +676,17 @@ int http::recv()
     //ReplaceEveryThing("<|||",">");
 
 #ifndef LOWOUTPUT
-    qInfo() << "Writing response to:" << cUrl;
-#endif
 
-    QFile oFile(cUrl.remove('/').remove('\\'));
+    QString fileName = cUrl.left(10).remove('/').remove('\\');
+    qInfo() << "Writing response to:" << fileName;
+
+    QFile oFile(fileName);
     if(!oFile.open(QIODevice::WriteOnly)) {
       qInfo() << "http::recv--Kann nicht schreiben-" << endl;
     }
     oFile.write(sHttpData.toUtf8());
     oFile.close();
+#endif
 
 #if !defined (NOOUTPUT)
     qInfo() << "Download Complete. Bytes: " << http_data.length() << endl;;

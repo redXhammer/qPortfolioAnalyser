@@ -156,15 +156,6 @@ bool Depot::LoadDepotFile (const QString &cFile)
     return true;
 }
 
-DepotPos* Depot::operator [] (const int &iAt)
-{
-    QList<DepotPos*>::iterator itList = begin();
-    for (;itList != end();itList++)
-    {
-        if ((*itList)->iDepotNr == iAt) return *itList;
-    }
-    return (DepotPos*)-1;
-}
 
 void Depot::Delete (const int &iAt)
 {

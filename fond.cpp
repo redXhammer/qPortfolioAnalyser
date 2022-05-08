@@ -15,7 +15,8 @@ typedef unsigned long DWORD;
 
 QDate fond::DateOfWkn()
 {
-    return QDate::fromString(WknFile.GetData("Fond","LastUpdate"),"dd.MM.yyyy");
+    QString date = WknFile.GetData("Fond","LastUpdate");
+    return QDate::fromString(date,"dd.MM.yyyy");
 }
 
 QString fond::GetWknFileName()
